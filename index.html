@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Erase text from any photo and add your own. Free, unlimited, right in your browser.">
+<title>Edit.</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ctext x='32' y='44' font-family='Helvetica,Arial' font-size='34' font-weight='300' fill='%23fff' text-anchor='middle'%3EAa%3C/text%3E%3Ccircle cx='50' cy='44' r='4' fill='%23fa2d48'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Montserrat:wght@100..900&amp;family=Jost:wght@100..900&amp;family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Bodoni+Moda:ital,wght@0,400..900;1,400..900&amp;family=Cinzel:wght@400..900&amp;family=Oswald:wght@200..700&amp;family=Bebas+Neue&amp;family=Anton&amp;family=Archivo+Black&amp;family=Space+Mono:wght@400;700&amp;family=Dancing+Script:wght@400..700&amp;family=Great+Vibes&amp;display=swap">
+<style>
+:root{
+  --bg:#000; --card:#121214; --card2:#1c1c1e; --sel:#3a3a3c; --line:rgba(255,255,255,.09);
+  --text:#f5f5f7; --dim:#8e8e93; --accent:#fa2d48; --accent2:#ff5e73; --warn:#ffd60a;
+  --radius:22px;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f5f5f7; --card:#fff; --card2:#f0f0f3; --sel:#fff; --line:rgba(0,0,0,.08); --text:#1d1d1f; --dim:#6e6e73; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{
+  font-family:"Helvetica Neue",Helvetica,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Arial,sans-serif;
+  font-weight:300; -webkit-font-smoothing:antialiased; line-height:1.4;
+  min-height:100vh; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+main{max-width:620px;margin:0 auto;padding:22px 14px 48px}
+body.editing main{max-width:1240px}
+header{display:flex;align-items:baseline;justify-content:space-between;margin:6px 4px 18px}
+h1{font-weight:200;font-size:44px;letter-spacing:-.02em;margin:0}
+h1 span{color:var(--accent)}
+.tag{color:var(--dim);font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.drop{
+  position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  min-height:300px;border-radius:16px;background:var(--card2);overflow:hidden;cursor:pointer;
+  border:1.5px dashed transparent;transition:border-color .2s;
+}
+.drop.over{border-color:var(--accent)}
+.drop:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.drop .hint{color:var(--dim);font-size:16px;text-align:center;padding:0 20px}
+.drop .plus{width:54px;height:54px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff;font-size:30px;font-weight:200;line-height:1}
+.feat{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 2px;padding:0;list-style:none}
+.feat li{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--dim)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+[hidden]{display:none !important}
+
+/* editor */
+.topbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.ib{min-width:46px;height:44px;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:13px;font:inherit;font-size:20px;font-weight:300;cursor:pointer;display:grid;place-items:center;padding:0 12px;touch-action:manipulation}
+.ib:disabled{opacity:.35;cursor:default}
+.ib.txt{font-size:15px;font-weight:400}
+.ib.pri{background:var(--accent);border-color:transparent;color:#fff}
+.sp{flex:1}
+.vp{position:relative;height:min(58svh,760px);min-height:280px;border-radius:18px;overflow:hidden;background:
+  repeating-conic-gradient(rgba(128,128,128,.14) 0 25%, transparent 0 50%) 0 0/22px 22px, var(--card2);
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:crosshair}
+.vp.tx{cursor:default}
+.stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.stage canvas,.stage img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.stage img{opacity:0;pointer-events:none}
+.vp.orig .stage img{opacity:1}
+#ov{position:absolute;left:0;top:0;pointer-events:none}
+.pill{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.66);color:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:400;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:none;white-space:nowrap;z-index:3}
+.zoomchip{position:absolute;right:10px;bottom:10px;z-index:3;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:400;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.spin{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;animation:r 1s linear infinite;flex:0 0 auto}
+@keyframes r{to{transform:rotate(360deg)}}
+.tools{display:flex;gap:6px;background:var(--card2);border-radius:16px;padding:4px;margin:10px 0}
+.tools button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;color:var(--dim);font:inherit;font-size:13px;font-weight:400;padding:9px 4px 8px;border-radius:12px;cursor:pointer;touch-action:manipulation}
+.tools button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tools button.on{background:var(--sel);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.panel{display:flex;flex-direction:column;gap:14px}
+.lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;font-weight:400;margin:0 2px 7px}
+.lbl b{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text)}
+.hint2{color:var(--dim);font-size:14px;margin:0 2px}
+.seg{display:flex;background:var(--card2);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--text);padding:10px 6px;border-radius:9px;font:inherit;font-size:15px;font-weight:400;cursor:pointer;touch-action:manipulation}
+.seg button.on{background:var(--sel);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=range]{width:100%;accent-color:var(--accent);height:30px;margin:0}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;font-weight:400;cursor:pointer}
+.sw small{display:block;color:var(--dim);font-size:13px;font-weight:300}
+.sw input{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:51px;height:31px;border-radius:999px;background:var(--sel);position:relative;cursor:pointer;margin:0;transition:background .2s;border:1px solid var(--line)}
+.sw input::after{content:"";position:absolute;left:2px;top:2px;width:25px;height:25px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.sw input:checked{background:var(--accent)}
+.sw input:checked::after{transform:translateX(20px)}
+.swatches{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;touch-action:manipulation}
+.swatch.on{outline:2.5px solid var(--accent);outline-offset:2px}
+.cpick{position:relative;width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--line);background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
+.cpick input{position:absolute;inset:-8px;width:60px;height:60px;opacity:0;cursor:pointer;border:0;padding:0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:12px;padding:9px 13px;font-size:17px;cursor:pointer;line-height:1.1;touch-action:manipulation}
+.ghost.on{border-color:var(--accent)}
+.chip.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+textarea,.in{width:100%;resize:none;border:0;outline:0;background:var(--card2);color:var(--text);font:inherit;font-size:18px;font-weight:400;border-radius:14px;padding:12px 14px}
+textarea:focus,.in:focus{box-shadow:0 0 0 2px var(--accent)}
+.row{display:flex;gap:10px}
+.ghost{flex:1;border:1px solid var(--line);background:var(--card2);color:var(--text);font:inherit;font-size:16px;font-weight:400;border-radius:14px;padding:13px;cursor:pointer;touch-action:manipulation}
+.ghost.red{color:#ff6961}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;border:0;cursor:pointer;background:var(--accent);color:#fff;font:inherit;font-size:17px;font-weight:400;border-radius:14px;padding:14px;touch-action:manipulation}
+.btn:disabled{opacity:.45}
+button:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.msg{margin:10px 2px 0;padding:12px 14px;border-radius:14px;font-size:15px;background:var(--card2)}
+.msg.err{color:#ff6961}
+details summary{cursor:pointer;color:var(--dim);font-size:14px;list-style:none;padding:8px 4px}
+details summary::-webkit-details-marker{display:none}
+details p{color:var(--dim);font-size:13px;margin:8px 4px}
+.links{display:flex;gap:10px;justify-content:center;margin-top:6px}
+.link{background:none;border:0;color:var(--dim);font:inherit;font-size:14px;padding:10px;cursor:pointer}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.sheet .card{width:100%;max-width:480px;margin:0}
+.sheet img{display:block;max-width:100%;max-height:50vh;margin:0 auto 12px;border-radius:12px}
+.sheet a.btn{text-decoration:none;margin-top:10px}
+@media (min-width:900px){
+  .ed{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+  .vp{height:calc(100vh - 190px);max-height:none}
+  .side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .tools{margin-top:0}
+}
+.look{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:12px}
+.swatch.off{background:conic-gradient(from 45deg,#888 0 25%,#ddd 0 50%,#888 0 75%,#ddd 0)!important}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Edit<span>.</span></h1>
+    <div class="tag">change text so it looks real.</div>
+  </header>
+
+  <section class="card" id="empty" aria-label="Choose a photo">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a photo">
+      <div class="plus" aria-hidden="true">+</div>
+      <div class="hint">Tap to choose a photo<br><small>or drop / paste one here</small></div>
+    </div>
+    <ul class="feat">
+      <li>Change text</li><li>AI eraser</li><li>Recolor text</li><li>Full quality</li><li>Free &amp; unlimited</li>
+    </ul>
+  </section>
+  <input type="file" id="file" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
+
+  <section id="editor" hidden aria-label="Editor">
+    <div class="ed">
+      <div>
+        <div class="topbar">
+          <button class="ib" id="undo" type="button" aria-label="Undo" disabled>&#8630;</button>
+          <button class="ib" id="redo" type="button" aria-label="Redo" disabled>&#8631;</button>
+          <button class="ib txt" id="hold" type="button" aria-label="Hold to see the original">Original</button>
+          <div class="sp"></div>
+          <button class="ib txt pri" id="save" type="button">Save</button>
+        </div>
+        <div class="vp" id="vp">
+          <div class="stage" id="stage"><canvas id="base"></canvas><img id="orig" alt=""></div>
+          <canvas id="ov"></canvas>
+          <div class="pill" id="pill" hidden><div class="spin"></div><span id="pillText">Working&hellip;</span></div>
+          <button class="zoomchip" id="fitBtn" type="button" hidden>Fit</button>
+        </div>
+        <div class="msg" id="msg" role="alert" hidden></div>
+      </div>
+
+      <div class="side">
+        <div class="tools" role="tablist" aria-label="Tools">
+          <button type="button" data-tool="change" class="on" role="tab"><svg viewBox="0 0 24 24"><path d="M4 7V5h9v2"/><path d="M8.5 5v12"/><path d="M6.5 17h4"/><path d="M14 13l3-3 3 3"/><path d="M17 10v9"/></svg>Change</button>
+          <button type="button" data-tool="erase" role="tab"><svg viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L10 18H6l-2-2 9.5-9.5z"/><path d="M9 9l6 6"/><path d="M10 18h10"/></svg>Remove</button>
+          <button type="button" data-tool="text" role="tab"><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg>Add text</button>
+          <button type="button" data-tool="recolor" role="tab"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 7.2 6 10.5A6 6 0 0 1 6 13.5C6 10.2 9 7 12 3z"/></svg>Color</button>
+        </div>
+
+        <section class="card panel" id="pChange">
+          <p class="hint2"><b style="font-weight:500;color:var(--text)">Drag a box around the words you want to change.</b> The old words get erased by the AI eraser, then new text appears in the same spot, matched to the font, size, color and angle. Type your words and you&rsquo;re done.</p>
+          <p class="hint2" style="font-size:13px">Tips: one line at a time works best. Box just the words, with a little room around them. Pinch to zoom in for small text. Change the font or color in the next step if the match is off.</p>
+          <p class="hint2" style="font-size:13px" id="aiNote">The AI eraser downloads once (about 30 MB), then it&rsquo;s saved on this device and works offline. Unlimited.</p>
+        </section>
+
+        <section class="card panel" id="pErase" hidden>
+          <div class="seg" id="eEng"><button type="button" data-v="ai" class="on">AI eraser</button><button type="button" data-v="fast">Fast eraser</button></div>
+          <div class="seg" id="eMode"><button type="button" data-v="brush" class="on">Brush</button><button type="button" data-v="box">Box</button></div>
+          <p class="hint2" id="eHint">Paint over the text. It fills in from around it when you lift your finger.</p>
+          <div id="eSizeWrap"><div class="lbl">Brush size <b id="eSizeV">34</b></div><input type="range" id="eSize" min="6" max="140" value="34"></div>
+          <label class="sw"><span>Letters only<small>Erase just the letters, keep the photo behind them</small></span><input type="checkbox" id="eLetters" checked></label>
+          <p class="hint2" style="font-size:13px">Tip: pinch to zoom in for small text. Two fingers move the photo.</p>
+        </section>
+
+        <section class="card panel" id="pText" hidden>
+          <div id="tNone">
+            <p class="hint2" style="margin-bottom:12px">Tap the photo to add text, or tap a text to change it.</p>
+            <button class="btn" id="tAdd" type="button">Add text</button>
+          </div>
+          <div id="tCtl" class="panel" hidden>
+            <textarea id="tText" rows="2" maxlength="300" placeholder="Type here" autocapitalize="characters" spellcheck="false"></textarea>
+            <div><div class="lbl">Font</div><div class="chips" id="tFonts"></div></div>
+            <div><div class="lbl">Weight</div><div class="chips" id="tWeights"></div></div>
+            <div><div class="lbl">Size <b id="tSizeV"></b></div><input type="range" id="tSize" min="4" max="1000" value="80"></div>
+            <div><div class="lbl">Letter spacing <b id="tSpaceV"></b></div><input type="range" id="tSpace" min="-10" max="150" value="10"></div>
+            <div><div class="lbl">Color</div><div class="swatches" id="tColors"></div></div>
+            <div class="seg" id="tAlign"><button type="button" data-v="left">Left</button><button type="button" data-v="center" class="on">Center</button><button type="button" data-v="right">Right</button></div>
+            <div><div class="lbl">Opacity <b id="tOpV"></b></div><input type="range" id="tOp" min="5" max="100" value="100"></div>
+            <div><div class="lbl">Rotate <b id="tRotV"></b></div><input type="range" id="tRot" min="-180" max="180" value="0"></div>
+            <div><div class="lbl">Outline <b id="tOutV"></b></div><input type="range" id="tOut" min="0" max="20" value="0"></div>
+            <div id="tOcWrap" hidden><div class="lbl">Outline color</div><div class="swatches" id="tOColors"></div></div>
+            <label class="sw"><span>Shadow</span><input type="checkbox" id="tShadow"></label>
+            <div class="look">
+              <label class="sw"><span>Look printed in<small>Blends the text into the photo: softness, grain and print texture</small></span><input type="checkbox" id="tReal"></label>
+              <div id="tRealWrap">
+                <div><div class="lbl">Softness <b id="tBlurV"></b></div><input type="range" id="tBlur" min="0" max="60" value="0"></div>
+                <div><div class="lbl">Grain <b id="tGrainV"></b></div><input type="range" id="tGrain" min="0" max="40" value="0"></div>
+                <div><div class="lbl">Print texture <b id="tInkV"></b></div><input type="range" id="tInk" min="0" max="100" value="0"></div>
+              </div>
+            </div>
+            <div><div class="lbl">Gradient (bottom color) <b id="tC2V">Off</b></div><div class="swatches" id="tC2Colors"></div></div>
+            <div class="row"><button class="ghost red" id="tDel" type="button">Delete</button><button class="ghost" id="tDup" type="button">Copy</button><button class="ghost" id="tDone" type="button">Done</button></div>
+            <p class="hint2" style="font-size:13px">Drag to move. Pinch, or drag the round corner handle, to resize and rotate.</p>
+          </div>
+        </section>
+
+        <section class="card panel" id="pRecolor" hidden>
+          <div class="seg" id="rMode"><button type="button" data-v="brush" class="on">Brush</button><button type="button" data-v="box">Box</button></div>
+          <p class="hint2">Box or paint over text to change its color. The letter edges, shading and grain are kept, so it looks printed that way.</p>
+          <div><div class="lbl">Color</div><div class="swatches" id="rColors"></div></div>
+          <div id="rSizeWrap"><div class="lbl">Brush size <b id="rSizeV">34</b></div><input type="range" id="rSize" min="6" max="140" value="34"></div>
+          <label class="sw"><span>Letters only<small>Change just the text color, not what&rsquo;s behind</small></span><input type="checkbox" id="rLetters" checked></label>
+          <div id="rPickWrap"><div class="lbl">Text color to change <b id="rPickV">Auto</b></div>
+            <div class="row"><button class="ghost" id="rPick" type="button"><span id="rPickSw" style="display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px;border:1px solid var(--line);background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"></span>Pick from photo</button><button class="ghost" id="rAuto" type="button">Auto</button></div>
+          </div>
+        </section>
+
+        <details class="card" id="aiBox" style="padding:6px 14px">
+          <summary>Online AI edit (limited, few per day) &rsaquo;</summary>
+          <p>Uses free online AI. Only a few edits a day, can be slow, and the result comes back softer. Your text boxes stay on top.</p>
+          <textarea id="aiPrompt" rows="2" maxlength="400" placeholder="make the sky purple"></textarea>
+          <div style="height:10px"></div>
+          <button class="btn" id="aiGo" type="button">AI edit</button>
+          <div style="height:8px"></div>
+        </details>
+
+        <div class="links"><button class="link" id="newPhoto" type="button">New photo</button><button class="link" id="restart" type="button">Start over</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="card">
+    <img id="sheetImg" alt="Your edited photo">
+    <p class="hint2" style="text-align:center;margin-bottom:6px">Ready. Tap Save, or press and hold the picture.</p>
+    <button class="btn" id="sheetShare" type="button">Save</button>
+    <a class="btn" id="sheetDl" download="edit.png" style="background:var(--card2);color:var(--text)">Download file</a>
+    <div style="height:8px"></div>
+    <button class="ghost" id="sheetClose" type="button" style="width:100%">Close</button>
+  </div>
+</div>
+<script>
+"use strict";
+(function(){
+var MAX_SIDE = 4096, MAX_AREA = 16777216;
+var INPAINT_RADIUS = 5;
+var CV_URLS = [
+  "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js",
+  "https://docs.opencv.org/4.x/opencv.js"
+];
+var GRADIO_URL = "https://cdn.jsdelivr.net/npm/@gradio/client@2.7.2/dist/index.min.js";
+var AI_MODELS = [
+  { space: "black-forest-labs/FLUX.1-Kontext-Dev", endpoint: "/infer",
+    args: function(img, p){ return { input_image: img, prompt: p, seed: 0, randomize_seed: true, guidance_scale: 2.5, steps: 28 }; } },
+  { space: "multimodalart/Qwen-Image-Edit-Fast", endpoint: "/infer",
+    args: function(img, p){ return { image: img, prompt: p, seed: 0, randomize_seed: true, true_guidance_scale: 1.0, num_inference_steps: 8, rewrite_prompt: false }; } },
+  { space: "Qwen/Qwen-Image-Edit", endpoint: "/infer",
+    args: function(img, p){ return { image: img, prompt: p, seed: 0, randomize_seed: true, true_guidance_scale: 4.0, num_inference_steps: 30, rewrite_prompt: false }; } }
+];
+var FONTS = [
+  { n: "Helvetica", c: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+  { n: "Inter", c: '"Inter", "Helvetica Neue", Arial, sans-serif', g: 1 },
+  { n: "Montserrat", c: '"Montserrat", Arial, sans-serif', g: 1 },
+  { n: "Poppins", c: '"Poppins", Arial, sans-serif', g: 1 },
+  { n: "Futura", c: 'Futura, "Jost", "Century Gothic", sans-serif', g: 1 },
+  { n: "Didot", c: 'Didot, "Bodoni Moda", "Times New Roman", serif', g: 1 },
+  { n: "Bodoni", c: '"Bodoni Moda", Didot, serif', g: 1 },
+  { n: "Playfair", c: '"Playfair Display", Georgia, serif', g: 1 },
+  { n: "Times", c: '"Times New Roman", Times, serif' },
+  { n: "Cinzel", c: '"Cinzel", "Times New Roman", serif', g: 1 },
+  { n: "Oswald", c: '"Oswald", "Arial Narrow", sans-serif', g: 1 },
+  { n: "Bebas", c: '"Bebas Neue", "Arial Narrow", sans-serif', g: 1 },
+  { n: "Anton", c: '"Anton", Impact, sans-serif', g: 1 },
+  { n: "Archivo Black", c: '"Archivo Black", "Arial Black", sans-serif', g: 1 },
+  { n: "Impact", c: 'Impact, "Anton", "Arial Black", sans-serif' },
+  { n: "Mono", c: '"Space Mono", "Courier New", monospace', g: 1 },
+  { n: "Courier", c: '"Courier New", Courier, monospace' },
+  { n: "Script", c: '"Dancing Script", cursive', g: 1 },
+  { n: "Vibes", c: '"Great Vibes", cursive', g: 1 }
+];
+var WEIGHTS = [[100,"Thin"],[200,"Extra light"],[300,"Light"],[400,"Regular"],[500,"Medium"],[600,"Semibold"],[700,"Bold"],[900,"Black"]];
+var COLORS = ["#ffffff","#000000","#d6eeff","#a8d8ff","#5aa9ff","#1e4dff","#ff2d2d","#ff8ac4","#a970ff","#ffd60a","#d4af37","#c0c0c0","#34c759"];
+
+function $(id){ return document.getElementById(id); }
+var vp = $("vp"), stageEl = $("stage"), base = $("base"), origImg = $("orig"), ov = $("ov");
+var octx = ov.getContext("2d");
+var bctx = null;
+var W = 0, H = 0, origUrl = null, hasPhoto = false;
+var texts = [], selId = null, nextId = 1, lastStyle = null;
+var tool = "change", eMode = "brush", rMode = "brush";
+var rColor = "#d6eeff", pickColor = null, picking = false;
+var undoStack = [], redoStack = [];
+var busy = false, showOrig = false;
+var fit = 1, zoom = 1, panX = 0, panY = 0, sx0 = 0, sy0 = 0, vpW = 0, vpH = 0, dpr = 1;
+var gesture = null, ptrs = new Map(), hover = null;
+var cv = null, cvState = "idle", cvPromise = null;
+
+/* ---------- small ui helpers ---------- */
+var msgEl = $("msg"), pill = $("pill"), pillText = $("pillText"), msgTimer = 0;
+function showMsg(t, err){ if (window.__edit) window.__edit.lastMsg = t; msgEl.textContent = t; msgEl.className = "msg" + (err ? " err" : ""); msgEl.hidden = false; clearTimeout(msgTimer); msgTimer = setTimeout(function(){ msgEl.hidden = true; }, err ? 9000 : 6000); }
+function setPill(t){ if (t){ pillText.textContent = t; pill.hidden = false; } else pill.hidden = true; }
+function segInit(id, cb){
+  var el = $(id);
+  el.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    [].forEach.call(el.children, function(x){ x.classList.toggle("on", x === b); });
+    cb(b.getAttribute("data-v"));
+  });
+}
+function segSet(id, v){ [].forEach.call($(id).children, function(x){ x.classList.toggle("on", x.getAttribute("data-v") === v); }); }
+function swatchesInit(id, onPick){
+  var el = $(id);
+  COLORS.forEach(function(c){
+    var b = document.createElement("button"); b.type = "button"; b.className = "swatch"; b.style.background = c; b.setAttribute("data-c", c); b.setAttribute("aria-label", "Color " + c);
+    b.addEventListener("click", function(){ onPick(c); });
+    el.appendChild(b);
+  });
+  var w = document.createElement("label"); w.className = "cpick"; w.title = "Any color";
+  var inp = document.createElement("input"); inp.type = "color"; inp.setAttribute("aria-label", "Pick any color");
+  inp.addEventListener("input", function(){ onPick(inp.value); });
+  w.appendChild(inp); el.appendChild(w);
+}
+function swatchesSet(id, c){
+  c = (c || "").toLowerCase();
+  [].forEach.call($(id).querySelectorAll(".swatch"), function(b){ b.classList.toggle("on", b.getAttribute("data-c") === c); });
+  var inp = $(id).querySelector("input"); if (inp && /^#[0-9a-f]{6}$/.test(c)) inp.value = c;
+}
+
+/* ---------- open photo ---------- */
+var fileIn = $("file"), drop = $("drop");
+drop.addEventListener("click", function(){ fileIn.click(); });
+drop.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); fileIn.click(); } });
+fileIn.addEventListener("change", function(){ if (fileIn.files[0]) openFile(fileIn.files[0]); fileIn.value = ""; });
+["dragenter","dragover"].forEach(function(t){ document.addEventListener(t, function(e){ e.preventDefault(); drop.classList.add("over"); }); });
+["dragleave","drop"].forEach(function(t){ document.addEventListener(t, function(e){ e.preventDefault(); drop.classList.remove("over"); }); });
+document.addEventListener("drop", function(e){ var f = e.dataTransfer && e.dataTransfer.files[0]; if (f && /^image\//.test(f.type)) openFile(f); });
+document.addEventListener("paste", function(e){
+  if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
+  var items = (e.clipboardData && e.clipboardData.items) || [];
+  for (var i = 0; i < items.length; i++){ if (items[i].type.indexOf("image/") === 0){ openFile(items[i].getAsFile()); e.preventDefault(); return; } }
+});
+
+function loadImg(url){
+  return new Promise(function(res, rej){ var i = new Image(); i.onload = function(){ res(i); }; i.onerror = function(){ rej(new Error("bad")); }; i.src = url; });
+}
+function openFile(file){
+  if (busy) return;
+  var url = URL.createObjectURL(file);
+  loadImg(url).then(function(img){
+    var w = img.naturalWidth, h = img.naturalHeight;
+    var s = Math.min(1, MAX_SIDE / Math.max(w, h), Math.sqrt(MAX_AREA / (w * h)));
+    W = Math.max(1, Math.round(w * s)); H = Math.max(1, Math.round(h * s));
+    base.width = W; base.height = H;
+    bctx = base.getContext("2d", { willReadFrequently: true });
+    bctx.clearRect(0, 0, W, H);
+    bctx.drawImage(img, 0, 0, W, H);
+    if (origUrl) URL.revokeObjectURL(origUrl);
+    origUrl = url; origImg.src = url;
+    texts = []; selId = null; undoStack = []; redoStack = []; txBefore = null; baseVer++; realCache = {};
+    hasPhoto = true;
+    $("empty").hidden = true; $("editor").hidden = false; document.body.classList.add("editing");
+    zoom = 1; panX = 0; panY = 0;
+    layoutView(); updUR(); syncText(); setTool(tool);
+    if (s < 1) showMsg("Big photo: working at " + W + " x " + H + ".");
+  }).catch(function(){
+    URL.revokeObjectURL(url);
+    alert("That file couldn't be opened as a photo. Try a JPG or PNG.");
+  });
+}
+
+/* ---------- view: fit, zoom, pan ---------- */
+function layoutView(){
+  if (!hasPhoto) return;
+  var vh = document.documentElement.clientHeight || window.innerHeight;
+  var maxH = window.innerWidth >= 900 ? Math.max(320, vh - 190) : Math.max(260, Math.min(vh * 0.6, 780));
+  var wNow = vp.getBoundingClientRect().width;
+  vp.style.height = Math.round(Math.max(240, Math.min(maxH, wNow * H / W))) + "px";
+  var r = vp.getBoundingClientRect();
+  vpW = r.width; vpH = r.height; dpr = Math.min(window.devicePixelRatio || 1, 3);
+  fit = Math.min(vpW / W, vpH / H);
+  var cw = W * fit, ch = H * fit;
+  stageEl.style.width = cw + "px"; stageEl.style.height = ch + "px";
+  sx0 = (vpW - cw) / 2; sy0 = (vpH - ch) / 2;
+  ov.width = Math.round(vpW * dpr); ov.height = Math.round(vpH * dpr);
+  ov.style.width = vpW + "px"; ov.style.height = vpH + "px";
+  applyT();
+}
+function clampPan(){
+  if (zoom <= 1.0001){ zoom = 1; panX = 0; panY = 0; return; }
+  var cw = W * fit * zoom, ch = H * fit * zoom;
+  var minX = vpW * 0.5 - sx0 - cw, maxX = vpW * 0.5 - sx0;
+  var minY = vpH * 0.5 - sy0 - ch, maxY = vpH * 0.5 - sy0;
+  panX = Math.max(minX, Math.min(maxX, panX)); panY = Math.max(minY, Math.min(maxY, panY));
+}
+function applyT(){
+  clampPan();
+  stageEl.style.transform = "translate(" + (sx0 + panX) + "px," + (sy0 + panY) + "px) scale(" + zoom + ")";
+  stageEl.style.left = "0px"; stageEl.style.top = "0px";
+  $("fitBtn").hidden = zoom <= 1.0001;
+  draw();
+}
+function K(){ return fit * zoom; }
+function OX(){ return sx0 + panX; }
+function OY(){ return sy0 + panY; }
+function vpPoint(e){ var r = vp.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function toImg(p){ var k = K(); return { x: (p.x - OX()) / k, y: (p.y - OY()) / k }; }
+function toVp(x, y){ var k = K(); return { x: OX() + x * k, y: OY() + y * k }; }
+function zoomAt(vx, vy, z2){
+  z2 = Math.max(1, Math.min(16, z2));
+  var ip = toImg({ x: vx, y: vy });
+  zoom = z2;
+  panX = vx - ip.x * fit * zoom - sx0; panY = vy - ip.y * fit * zoom - sy0;
+  applyT();
+}
+$("fitBtn").addEventListener("click", function(){ zoom = 1; applyT(); });
+window.addEventListener("resize", function(){ clearTimeout(layoutView._t); layoutView._t = setTimeout(layoutView, 60); });
+vp.addEventListener("wheel", function(e){
+  if (!hasPhoto) return; e.preventDefault();
+  var p = vpPoint(e);
+  if (e.ctrlKey || Math.abs(e.deltaY) > 0){ zoomAt(p.x, p.y, zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))); }
+}, { passive: false });
+["gesturestart","gesturechange","gestureend"].forEach(function(t){ vp.addEventListener(t, function(e){ e.preventDefault(); }, { passive: false }); });
+vp.addEventListener("touchmove", function(e){ e.preventDefault(); }, { passive: false });
+vp.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+
+/* ---------- text model ---------- */
+var mctx = document.createElement("canvas").getContext("2d");
+function fontOf(t, px){ return (t.italic ? "italic " : "") + t.weight + " " + px + "px " + FONTS[t.font].c; }
+function lineW(c, l, sp){ var n = Array.from(l).length; return c.measureText(l).width + sp * Math.max(0, n - 1); }
+function measure(t){
+  mctx.font = fontOf(t, t.size);
+  var sp = t.spacing * t.size, lines = t.text.split("\n"), lh = t.size * (t.lhf || 1.18);
+  var ws = lines.map(function(l){ return lineW(mctx, l, sp); });
+  var w = Math.max.apply(null, ws.concat([t.size * 0.3]));
+  return { lines: lines, ws: ws, w: w, h: lines.length * lh, lh: lh, sp: sp };
+}
+function drawLine(c, l, x, y, sp, stroke){
+  if (!sp){ if (stroke) c.strokeText(l, x, y); else c.fillText(l, x, y); return; }
+  var ch = Array.from(l), pre = "";
+  for (var i = 0; i < ch.length; i++){
+    var xx = x + c.measureText(pre).width + sp * i;
+    if (stroke) c.strokeText(ch[i], xx, y); else c.fillText(ch[i], xx, y);
+    pre += ch[i];
+  }
+}
+function drawTextPlain(c, t, scale){
+  var M = measure(t);
+  c.save();
+  c.translate(t.x, t.y); c.rotate(t.rot);
+  c.globalAlpha = t.opacity;
+  c.font = fontOf(t, t.size); c.textBaseline = "middle"; c.textAlign = "left";
+  if (t.shadow){ c.shadowColor = "rgba(0,0,0,0.55)"; c.shadowBlur = t.size * 0.14 * scale; c.shadowOffsetY = t.size * 0.05 * scale; }
+  for (var i = 0; i < M.lines.length; i++){
+    var lw = M.ws[i];
+    var x = t.align === "left" ? -M.w / 2 : (t.align === "right" ? M.w / 2 - lw : -lw / 2);
+    var y = -M.h / 2 + M.lh * (i + 0.5);
+    if (t.outline > 0){ c.lineWidth = t.outline * t.size; c.lineJoin = "round"; c.miterLimit = 2; c.strokeStyle = t.ocolor; drawLine(c, M.lines[i], x, y, M.sp, true); }
+    c.fillStyle = textFill(c, t, y); drawLine(c, M.lines[i], x, y, M.sp, false);
+  }
+  c.restore();
+}
+function getSel(){ for (var i = 0; i < texts.length; i++) if (texts[i].id === selId) return texts[i]; return null; }
+function hitText(ip){
+  for (var i = texts.length - 1; i >= 0; i--){
+    var t = texts[i], M = measure(t);
+    var dx = ip.x - t.x, dy = ip.y - t.y, c = Math.cos(-t.rot), s = Math.sin(-t.rot);
+    var lx = dx * c - dy * s, ly = dx * s + dy * c, pad = Math.max(t.size * 0.25, 14 / K());
+    if (Math.abs(lx) <= M.w / 2 + pad && Math.abs(ly) <= M.h / 2 + pad) return t;
+  }
+  return null;
+}
+function selCorners(t){
+  var M = measure(t), pad = Math.max(t.size * 0.12, 6 / K()), hw = M.w / 2 + pad, hh = M.h / 2 + pad;
+  var c = Math.cos(t.rot), s = Math.sin(t.rot);
+  return [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(function(p){ return toVp(t.x + p[0] * c - p[1] * s, t.y + p[0] * s + p[1] * c); });
+}
+function fontsNeeded(t){
+  var f = FONTS[t.font]; if (!f.g || !document.fonts || !document.fonts.load) return Promise.resolve();
+  return document.fonts.load(fontOf(t, 40), t.text || "A").catch(function(){});
+}
+function ensureFont(t){ fontsNeeded(t).then(draw); }
+
+/* ---------- overlay drawing ---------- */
+var rafId = 0;
+function draw(){ if (!rafId) rafId = requestAnimationFrame(drawNow); }
+function drawNow(){
+  rafId = 0;
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, ov.width, ov.height);
+  if (!hasPhoto || showOrig) return;
+  var k = K();
+  octx.save();
+  octx.setTransform(dpr * k, 0, 0, dpr * k, dpr * OX(), dpr * OY());
+  octx.beginPath(); octx.rect(0, 0, W, H); octx.clip();
+  for (var i = 0; i < texts.length; i++) drawText(octx, texts[i], dpr * k);
+  octx.restore();
+  octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var t = getSel();
+  if (t && tool === "text"){
+    var cs = selCorners(t);
+    octx.beginPath(); octx.moveTo(cs[0].x, cs[0].y); for (var j = 1; j < 4; j++) octx.lineTo(cs[j].x, cs[j].y); octx.closePath();
+    octx.lineWidth = 3; octx.strokeStyle = "rgba(0,0,0,.45)"; octx.setLineDash([]); octx.stroke();
+    octx.lineWidth = 1.5; octx.strokeStyle = "#fff"; octx.setLineDash([6, 5]); octx.stroke(); octx.setLineDash([]);
+    handleDot(cs[2], "#fa2d48"); xDot(cs[0]);
+  }
+  var g = gesture;
+  if (g && g.type === "stroke" && g.pts.length){
+    var col = g.kind === "erase" ? "rgba(250,45,72,.45)" : hexA(rColor, 0.55);
+    octx.lineCap = "round"; octx.lineJoin = "round"; octx.strokeStyle = col; octx.fillStyle = col;
+    octx.lineWidth = g.r * 2 * k;
+    octx.beginPath();
+    var p0 = toVp(g.pts[0].x, g.pts[0].y); octx.moveTo(p0.x, p0.y);
+    if (g.pts.length === 1){ octx.arc(p0.x, p0.y, g.r * k, 0, Math.PI * 2); octx.fill(); }
+    else { for (var q = 1; q < g.pts.length; q++){ var pp = toVp(g.pts[q].x, g.pts[q].y); octx.lineTo(pp.x, pp.y); } octx.stroke(); }
+  }
+  if (g && g.type === "rect"){
+    var a = toVp(Math.min(g.x0, g.x1), Math.min(g.y0, g.y1)), b = toVp(Math.max(g.x0, g.x1), Math.max(g.y0, g.y1));
+    octx.fillStyle = g.kind === "erase" ? "rgba(250,45,72,.22)" : (g.kind === "change" ? "rgba(10,132,255,.22)" : hexA(rColor, 0.3));
+    octx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+    octx.lineWidth = 1.5; octx.strokeStyle = "#fff"; octx.setLineDash([6, 5]); octx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y); octx.setLineDash([]);
+  }
+  if (hover && (tool === "erase" && eMode === "brush" || tool === "recolor" && rMode === "brush") && !g){
+    octx.beginPath(); octx.arc(hover.x, hover.y, brushPx() / 2, 0, Math.PI * 2);
+    octx.lineWidth = 2.5; octx.strokeStyle = "rgba(0,0,0,.5)"; octx.stroke();
+    octx.lineWidth = 1.2; octx.strokeStyle = "#fff"; octx.stroke();
+  }
+}
+function handleDot(p, col){
+  octx.beginPath(); octx.arc(p.x, p.y, 12, 0, Math.PI * 2); octx.fillStyle = col; octx.fill();
+  octx.lineWidth = 2; octx.strokeStyle = "#fff"; octx.stroke();
+  octx.beginPath(); octx.arc(p.x, p.y, 5, -Math.PI * 0.9, Math.PI * 0.4); octx.lineWidth = 1.8; octx.stroke();
+}
+function xDot(p){
+  octx.beginPath(); octx.arc(p.x, p.y, 11, 0, Math.PI * 2); octx.fillStyle = "rgba(30,30,32,.92)"; octx.fill();
+  octx.lineWidth = 1.5; octx.strokeStyle = "#fff"; octx.stroke();
+  octx.beginPath(); octx.moveTo(p.x - 4, p.y - 4); octx.lineTo(p.x + 4, p.y + 4); octx.moveTo(p.x + 4, p.y - 4); octx.lineTo(p.x - 4, p.y + 4); octx.stroke();
+}
+function hexRGB(h){ h = h.replace("#", ""); return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)]; }
+function hexA(h, a){ var c = hexRGB(h); return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+function brushPx(){ return +(tool === "recolor" ? $("rSize").value : $("eSize").value); }
+
+/* ---------- pointer input ---------- */
+function dist(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
+vp.addEventListener("pointerdown", function(e){
+  if (!hasPhoto || (e.target && e.target.closest && e.target.closest("button"))) return;
+  e.preventDefault();
+  try { vp.setPointerCapture(e.pointerId); } catch(_){}
+  var p = vpPoint(e);
+  ptrs.set(e.pointerId, p);
+  if (e.pointerType === "mouse" && e.button === 1){ gesture = { type: "pan", last: p }; return; }
+  if (ptrs.size === 1) startSingle(p, e);
+  else if (ptrs.size === 2) startPinch();
+});
+vp.addEventListener("pointermove", function(e){
+  if (!hasPhoto) return;
+  var p = vpPoint(e);
+  if (!ptrs.has(e.pointerId)){ if (e.pointerType === "mouse"){ hover = p; draw(); } return; }
+  ptrs.set(e.pointerId, p);
+  hover = e.pointerType === "mouse" ? p : null;
+  if (!gesture) return;
+  if (gesture.type === "vpinch" || gesture.type === "tpinch"){ movePinch(); return; }
+  if (ptrs.size === 1) moveSingle(p);
+});
+function endPtr(e){
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (!gesture) return;
+  if (gesture.type === "vpinch" || gesture.type === "tpinch"){
+    if (ptrs.size < 2){ if (gesture.type === "tpinch"){ anchorFrom(gesture.t); txEnd(); } gesture = ptrs.size ? { type: "none" } : null; draw(); }
+    return;
+  }
+  if (ptrs.size === 0){ var g = gesture; gesture = null; endSingle(g, e.type === "pointercancel"); }
+}
+vp.addEventListener("pointerup", endPtr);
+vp.addEventListener("pointercancel", endPtr);
+vp.addEventListener("pointerleave", function(e){ if (e.pointerType === "mouse"){ hover = null; draw(); } });
+
+function startSingle(p, e){
+  var ip = toImg(p);
+  if (tool === "text"){
+    var t = getSel();
+    if (t){
+      var cs = selCorners(t);
+      if (dist(p, cs[2]) < 24){
+        var c = toVp(t.x, t.y);
+        txBegin();
+        gesture = { type: "thandle", t: t, c: c, d0: Math.max(4, dist(p, c)), a0: Math.atan2(p.y - c.y, p.x - c.x), size0: t.size, rot0: t.rot };
+        return;
+      }
+      if (dist(p, cs[0]) < 22){ gesture = { type: "tdelete", t: t, start: p }; return; }
+    }
+    var hit = hitText(ip);
+    if (hit){
+      var was = selId === hit.id;
+      select(hit.id);
+      txBegin();
+      gesture = { type: "tdrag", t: hit, start: p, ox: hit.x - ip.x, oy: hit.y - ip.y, moved: false, was: was };
+      return;
+    }
+    gesture = { type: "tap", start: p, last: p, moved: false };
+    return;
+  }
+  if (tool === "recolor" && picking){ gesture = { type: "pick", start: p }; return; }
+  if (busy){ gesture = { type: "tap", start: p, last: p, moved: false, noop: true }; return; }
+  if (tool === "change"){ if (eraseEngine === "ai") loadAI(); else loadCv(); gesture = { type: "rect", kind: "change", x0: ip.x, y0: ip.y, x1: ip.x, y1: ip.y }; draw(); return; }
+  var kind = tool, mode = tool === "erase" ? eMode : rMode;
+  if (kind === "erase"){ if (eraseEngine === "ai") loadAI(); else loadCv(); }
+  if (mode === "brush"){ gesture = { type: "stroke", kind: kind, r: brushPx() / 2 / K(), pts: [ip] }; }
+  else gesture = { type: "rect", kind: kind, x0: ip.x, y0: ip.y, x1: ip.x, y1: ip.y };
+  draw();
+}
+function moveSingle(p){
+  var g = gesture, ip = toImg(p);
+  if (g.type === "stroke"){
+    var last = g.pts[g.pts.length - 1];
+    if (dist(ip, last) * K() >= 2){ g.pts.push(ip); draw(); }
+  } else if (g.type === "rect"){ g.x1 = ip.x; g.y1 = ip.y; draw(); }
+  else if (g.type === "tdrag"){
+    if (!g.moved && dist(p, g.start) < 4) return;
+    g.moved = true; g.t.x = ip.x + g.ox; g.t.y = ip.y + g.oy; draw();
+  } else if (g.type === "thandle"){
+    var c = g.c, d = Math.max(4, dist(p, c)), a = Math.atan2(p.y - c.y, p.x - c.x);
+    g.t.size = clampSize(g.size0 * d / g.d0);
+    g.t.rot = snapRot(g.rot0 + (a - g.a0));
+    syncTextCtl(); draw();
+  } else if (g.type === "tap"){
+    if (!g.moved && dist(p, g.start) > 8) g.moved = true;
+    if (g.moved && zoom > 1){ panX += p.x - g.last.x; panY += p.y - g.last.y; applyT(); }
+    g.last = p;
+  } else if (g.type === "pan"){ panX += p.x - g.last.x; panY += p.y - g.last.y; g.last = p; applyT(); }
+}
+function endSingle(g, cancelled){
+  if (g.type === "stroke"){
+    if (cancelled){ draw(); return; }
+    applyRegion(g.kind, { type: "stroke", pts: g.pts, r: g.r });
+  } else if (g.type === "rect"){
+    if (cancelled){ draw(); return; }
+    var x0 = Math.min(g.x0, g.x1), x1 = Math.max(g.x0, g.x1), y0 = Math.min(g.y0, g.y1), y1 = Math.max(g.y0, g.y1);
+    if ((x1 - x0) * K() < 4 || (y1 - y0) * K() < 4){ draw(); return; }
+    if (g.kind === "change") changeText({ x0: x0, y0: y0, x1: x1, y1: y1 });
+    else applyRegion(g.kind, { type: "rect", x0: x0, y0: y0, x1: x1, y1: y1 });
+  } else if (g.type === "tdrag"){
+    anchorFrom(g.t); txEnd(); draw();
+    if (!g.moved && g.was){ var ta = $("tText"); ta.focus(); }
+  } else if (g.type === "thandle"){ anchorFrom(g.t); txEnd(); draw(); }
+  else if (g.type === "tdelete"){ deleteSel(); }
+  else if (g.type === "pick"){ samplePick(toImg(g.start)); }
+  else if (g.type === "tap" && !g.moved && !g.noop && tool === "text"){
+    if (selId !== null) select(null);
+    else addText(toImg(g.start), true);
+  }
+}
+function startPinch(){
+  var pts = Array.from(ptrs.values()), a = pts[0], b = pts[1];
+  var prev = gesture;
+  if (prev && prev.type === "tdrag"){
+    var t = prev.t;
+    gesture = { type: "tpinch", t: t, d0: Math.max(10, dist(a, b)), a0: Math.atan2(b.y - a.y, b.x - a.x), size0: t.size, rot0: t.rot, m0: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, tx0: t.x, ty0: t.y };
+    return;
+  }
+  if (prev && prev.type === "thandle") txEnd();
+  var m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  gesture = { type: "vpinch", d0: Math.max(10, dist(a, b)), z0: zoom, ip: toImg(m) };
+  draw();
+}
+function movePinch(){
+  var pts = Array.from(ptrs.values()); if (pts.length < 2) return;
+  var a = pts[0], b = pts[1], g = gesture, d = Math.max(10, dist(a, b)), m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  if (g.type === "tpinch"){
+    var an = Math.atan2(b.y - a.y, b.x - a.x);
+    g.t.size = clampSize(g.size0 * d / g.d0);
+    g.t.rot = snapRot(g.rot0 + (an - g.a0));
+    g.t.x = g.tx0 + (m.x - g.m0.x) / K(); g.t.y = g.ty0 + (m.y - g.m0.y) / K();
+    syncTextCtl(); draw();
+  } else {
+    zoom = Math.max(1, Math.min(16, g.z0 * d / g.d0));
+    panX = m.x - g.ip.x * fit * zoom - sx0; panY = m.y - g.ip.y * fit * zoom - sy0;
+    applyT();
+  }
+}
+function clampSize(s){ return Math.max(4, Math.min(Math.max(W, H) * 1.5, s)); }
+function snapRot(r){
+  while (r > Math.PI) r -= 2 * Math.PI; while (r < -Math.PI) r += 2 * Math.PI;
+  var deg = r * 180 / Math.PI, snaps = [0, 90, -90, 180, -180];
+  for (var i = 0; i < snaps.length; i++) if (Math.abs(deg - snaps[i]) < 3) return snaps[i] * Math.PI / 180;
+  return r;
+}
+
+/* ---------- original (hold to compare) ---------- */
+var holdBtn = $("hold");
+function setOrig(on){ showOrig = on; vp.classList.toggle("orig", on); draw(); }
+holdBtn.addEventListener("pointerdown", function(e){ e.preventDefault(); setOrig(true); });
+["pointerup","pointerleave","pointercancel"].forEach(function(t){ holdBtn.addEventListener(t, function(){ setOrig(false); }); });
+holdBtn.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+
+/* ---------- undo / redo ---------- */
+var txBefore = null, txTimer = 0;
+function txBegin(){ if (txBefore === null) txBefore = JSON.stringify(texts); }
+function txEnd(delay){
+  clearTimeout(txTimer);
+  var f = function(){
+    if (txBefore === null) return;
+    var a = JSON.stringify(texts);
+    if (a !== txBefore) pushUndo({ kind: "tx", before: txBefore, after: a });
+    txBefore = null;
+  };
+  if (delay) txTimer = setTimeout(f, delay); else f();
+}
+function entryBytes(e){ return e.kind === "px" ? e.w * e.h * 8 : (e.kind === "multi" ? e.items.reduce(function(s, x){ return s + entryBytes(x); }, 0) : 200); }
+function pushUndo(e){
+  undoStack.push(e); redoStack = [];
+  var total = 0; undoStack.forEach(function(x){ total += entryBytes(x); });
+  while ((total > 220e6 || undoStack.length > 60) && undoStack.length > 1){ total -= entryBytes(undoStack.shift()); }
+  updUR();
+}
+function applyEntry(e, which){
+  if (e.kind === "multi"){ var its = which === "before" ? e.items.slice().reverse() : e.items; its.forEach(function(x){ applyEntry(x, which); }); return; }
+  if (e.kind === "px"){ bctx.putImageData(e[which], e.x, e.y); baseVer++; }
+  else { texts = JSON.parse(e[which]); if (!getSel()) selId = null; syncText(); }
+  draw();
+}
+function doUndo(){ if (busy) return; txEnd(); var e = undoStack.pop(); if (!e) return; applyEntry(e, "before"); redoStack.push(e); updUR(); }
+function doRedo(){ if (busy) return; txEnd(); var e = redoStack.pop(); if (!e) return; applyEntry(e, "after"); undoStack.push(e); updUR(); }
+function updUR(){ $("undo").disabled = !undoStack.length; $("redo").disabled = !redoStack.length; }
+$("undo").addEventListener("click", doUndo);
+$("redo").addEventListener("click", doRedo);
+document.addEventListener("keydown", function(e){
+  var typing = e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT");
+  if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z") && !typing){ e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
+  else if ((e.metaKey || e.ctrlKey) && (e.key === "y") && !typing){ e.preventDefault(); doRedo(); }
+  else if ((e.key === "Delete" || e.key === "Backspace") && !typing && selId !== null && tool === "text"){ e.preventDefault(); deleteSel(); }
+});
+
+/* ---------- region masks ---------- */
+function buildMask(region, margin){
+  var bx0, by0, bx1, by1;
+  if (region.type === "rect"){ bx0 = region.x0; by0 = region.y0; bx1 = region.x1; by1 = region.y1; }
+  else {
+    bx0 = Infinity; by0 = Infinity; bx1 = -Infinity; by1 = -Infinity;
+    region.pts.forEach(function(p){ bx0 = Math.min(bx0, p.x); by0 = Math.min(by0, p.y); bx1 = Math.max(bx1, p.x); by1 = Math.max(by1, p.y); });
+    bx0 -= region.r; by0 -= region.r; bx1 += region.r; by1 += region.r;
+  }
+  var x = Math.max(0, Math.floor(bx0 - margin)), y = Math.max(0, Math.floor(by0 - margin));
+  var x2 = Math.min(W, Math.ceil(bx1 + margin)), y2 = Math.min(H, Math.ceil(by1 + margin));
+  var w = x2 - x, h = y2 - y;
+  if (w < 1 || h < 1) return null;
+  var c = document.createElement("canvas"); c.width = w; c.height = h;
+  var cx = c.getContext("2d");
+  cx.fillStyle = "#fff"; cx.strokeStyle = "#fff";
+  if (region.type === "rect"){
+    var rx0 = Math.max(0, Math.floor(region.x0)), ry0 = Math.max(0, Math.floor(region.y0));
+    var rx1 = Math.min(W, Math.ceil(region.x1)), ry1 = Math.min(H, Math.ceil(region.y1));
+    cx.fillRect(rx0 - x, ry0 - y, rx1 - rx0, ry1 - ry0);
+  } else {
+    cx.lineCap = "round"; cx.lineJoin = "round"; cx.lineWidth = region.r * 2;
+    cx.beginPath(); cx.moveTo(region.pts[0].x - x, region.pts[0].y - y);
+    if (region.pts.length === 1){ cx.arc(region.pts[0].x - x, region.pts[0].y - y, region.r, 0, Math.PI * 2); cx.fill(); }
+    else { for (var i = 1; i < region.pts.length; i++) cx.lineTo(region.pts[i].x - x, region.pts[i].y - y); cx.stroke(); }
+  }
+  var d = cx.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h), any = 0;
+  for (var j = 0; j < m.length; j++){ if (d[j * 4 + 3] > 100){ m[j] = 1; any++; } }
+  c.width = 0;
+  if (!any) return null;
+  return { x: x, y: y, w: w, h: h, m: m };
+}
+function edgeMedian(px, m, w, h){
+  var rs = [], gs = [], bs = [];
+  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++){
+    var i = y * w + x; if (!m[i]) continue;
+    var edge = x === 0 || y === 0 || x === w - 1 || y === h - 1 || !m[i - 1] || !m[i + 1] || !m[i - w] || !m[i + w];
+    if (edge){ rs.push(px[i * 4]); gs.push(px[i * 4 + 1]); bs.push(px[i * 4 + 2]); }
+  }
+  function med(a){ if (!a.length) return 128; a.sort(function(p, q){ return p - q; }); return a[a.length >> 1]; }
+  return [med(rs), med(gs), med(bs)];
+}
+function colorDist(px, m, n, bg){
+  var d = new Float32Array(n);
+  for (var i = 0; i < n; i++){
+    if (!m[i]) continue;
+    var dr = px[i * 4] - bg[0], dg = px[i * 4 + 1] - bg[1], db = px[i * 4 + 2] - bg[2];
+    d[i] = Math.sqrt(0.30 * dr * dr + 0.59 * dg * dg + 0.11 * db * db) * 1.4;
+  }
+  return d;
+}
+function dilate(m, w, h, r){
+  if (r < 1) return m;
+  var tmp = new Uint8Array(w * h), out = new Uint8Array(w * h), x, y, s;
+  for (y = 0; y < h; y++){
+    var row = y * w; s = 0;
+    for (x = 0; x < Math.min(r, w); x++) s += m[row + x];
+    for (x = 0; x < w; x++){
+      if (x + r < w) s += m[row + x + r];
+      if (x - r - 1 >= 0) s -= m[row + x - r - 1];
+      tmp[row + x] = s > 0 ? 1 : 0;
+    }
+  }
+  for (x = 0; x < w; x++){
+    s = 0;
+    for (y = 0; y < Math.min(r, h); y++) s += tmp[y * w + x];
+    for (y = 0; y < h; y++){
+      if (y + r < h) s += tmp[(y + r) * w + x];
+      if (y - r - 1 >= 0) s -= tmp[(y - r - 1) * w + x];
+      out[y * w + x] = s > 0 ? 1 : 0;
+    }
+  }
+  return out;
+}
+function slide1d(f, g, hh, out, n, r, isMax, getv, setv){
+  var k = 2 * r + 1, N = Math.ceil((n + 2 * r) / k) * k, neutral = isMax ? -1e9 : 1e9, i;
+  for (i = 0; i < N; i++) f[i] = (i < r || i >= r + n) ? neutral : getv(i - r);
+  for (i = 0; i < N; i++){ g[i] = (i % k === 0) ? f[i] : (isMax ? Math.max(g[i - 1], f[i]) : Math.min(g[i - 1], f[i])); }
+  for (i = N - 1; i >= 0; i--){ hh[i] = (i % k === k - 1 || i === N - 1) ? f[i] : (isMax ? Math.max(hh[i + 1], f[i]) : Math.min(hh[i + 1], f[i])); }
+  for (i = 0; i < n; i++){ var a = hh[i], b = g[i + 2 * r]; setv(i, isMax ? (a > b ? a : b) : (a < b ? a : b)); }
+}
+function rankFilter(src, w, h, r, isMax){
+  var tmp = new Float32Array(w * h), out = new Float32Array(w * h), L = Math.max(w, h) + 2 * r + 2 * r + 2;
+  var f = new Float32Array(L), g = new Float32Array(L), hh = new Float32Array(L), y, x;
+  for (y = 0; y < h; y++){ var row = y * w; slide1d(f, g, hh, null, w, r, isMax, function(i){ return src[row + i]; }, function(i, v){ tmp[row + i] = v; }); }
+  for (x = 0; x < w; x++){ slide1d(f, g, hh, null, h, r, isMax, function(i){ return tmp[i * w + x]; }, function(i, v){ out[i * w + x] = v; }); }
+  return out;
+}
+function lettersMask(img, mk){
+  var w = mk.w, h = mk.h, n = w * h, px = img.data, m = mk.m, i;
+  var L = new Float32Array(n), samp = [];
+  for (i = 0; i < n; i++){ L[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]; if (m[i] && (i % 7 === 0)) samp.push(L[i]); }
+  samp.sort(function(a, b){ return a - b; });
+  var medL = samp.length ? samp[samp.length >> 1] : 128;
+  var r = Math.max(3, Math.round(Math.max(W, H) / 330)), bright = medL < 128, feat;
+  if (bright){ feat = rankFilter(rankFilter(L, w, h, r, false), w, h, r, true); for (i = 0; i < n; i++) feat[i] = L[i] - feat[i]; }
+  else { feat = rankFilter(rankFilter(L, w, h, r, true), w, h, r, false); for (i = 0; i < n; i++) feat[i] = feat[i] - L[i]; }
+  var seed = new Uint8Array(n), cnt = 0;
+  for (i = 0; i < n; i++) if (m[i] && feat[i] > 45){ seed[i] = 1; cnt++; }
+  // big letters on a plain background: anything clearly different from the edge color
+  var bg = edgeMedian(px, m, w, h), d = colorDist(px, m, n, bg), edgeN = 0, edgeOk = 0;
+  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++){
+    var j = y * w + x; if (!m[j]) continue;
+    if (x === 0 || y === 0 || x === w - 1 || y === h - 1 || !m[j - 1] || !m[j + 1] || !m[j - w] || !m[j + w]){ edgeN++; if (d[j] < 26) edgeOk++; }
+  }
+  if (edgeN && edgeOk / edgeN > 0.85) return m;
+  if (cnt < 3) return null;
+  return dilate(seed, w, h, Math.max(3, Math.round(Math.max(W, H) / 400)));
+}
+
+/* ---------- eraser engines ---------- */
+function loadCv(){
+  if (cvPromise) return cvPromise;
+  cvState = "loading";
+  cvPromise = new Promise(function(resolve){
+    var idx = 0;
+    function tryNext(){
+      if (idx >= CV_URLS.length){ cvState = "failed"; resolve(false); return; }
+      var url = CV_URLS[idx++];
+      var s = document.createElement("script"); s.async = true; s.src = url;
+      var done = false;
+      var to = setTimeout(function(){ if (!done){ done = true; tryNext(); } }, 60000);
+      s.onerror = function(){ if (!done){ done = true; clearTimeout(to); tryNext(); } };
+      s.onload = function(){
+        var t0 = Date.now(), hooked = false;
+        (function poll(){
+          if (done) return;
+          var c = window.__cvMod || window.cv;
+          if (c && c.Mat && typeof c.inpaint === "function"){ done = true; clearTimeout(to); cv = c; cvState = "ready"; resolve(true); return; }
+          if (c && !hooked){
+            hooked = true;
+            if (typeof c.then === "function"){ try { c.then(function(mod){ window.__cvMod = mod; }); } catch(_){} }
+            else { var prev = c.onRuntimeInitialized; c.onRuntimeInitialized = function(){ if (prev) try { prev(); } catch(_){} window.__cvMod = c; }; }
+          }
+          if (Date.now() - t0 > 40000){ done = true; clearTimeout(to); tryNext(); return; }
+          setTimeout(poll, 120);
+        })();
+      };
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+  return cvPromise;
+}
+function inpaintCv(img, m, w, h){
+  var src = null, rgb = null, mask = null, dst = null;
+  try {
+    src = cv.matFromImageData(img); rgb = new cv.Mat(); cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
+    mask = new cv.Mat(h, w, cv.CV_8UC1); var md = mask.data;
+    for (var i = 0; i < m.length; i++) md[i] = m[i] ? 255 : 0;
+    dst = new cv.Mat();
+    cv.inpaint(rgb, mask, dst, INPAINT_RADIUS, cv.INPAINT_TELEA);
+    var dd = dst.data, id = img.data;
+    for (var j = 0; j < m.length; j++) if (m[j]){ id[j * 4] = dd[j * 3]; id[j * 4 + 1] = dd[j * 3 + 1]; id[j * 4 + 2] = dd[j * 3 + 2]; }
+  } finally { [src, rgb, mask, dst].forEach(function(x){ if (x) try { x.delete(); } catch(_){} }); }
+}
+function inpaintJs(img, m, w, h){
+  var n = w * h, px = img.data, known = new Uint8Array(n), R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n);
+  var i, k, cnt = 0;
+  for (i = 0; i < n; i++){ R[i] = px[i * 4]; G[i] = px[i * 4 + 1]; B[i] = px[i * 4 + 2]; known[i] = m[i] ? 0 : 1; if (!m[i]) cnt++; }
+  if (!cnt) return;
+  var NB = [[-1,0,1],[1,0,1],[0,-1,1],[0,1,1],[-1,-1,0.7],[1,-1,0.7],[-1,1,0.7],[1,1,0.7]];
+  var queued = new Uint8Array(n), front = [];
+  for (i = 0; i < n; i++) if (!known[i]){
+    var x = i % w, y = (i / w) | 0;
+    for (k = 0; k < 8; k++){ var xx = x + NB[k][0], yy = y + NB[k][1]; if (xx >= 0 && yy >= 0 && xx < w && yy < h && known[yy * w + xx]){ front.push(i); queued[i] = 1; break; } }
+  }
+  while (front.length){
+    var vals = new Float32Array(front.length * 3), next = [];
+    for (var f = 0; f < front.length; f++){
+      i = front[f]; var x1 = i % w, y1 = (i / w) | 0, sw = 0, sr = 0, sg = 0, sb = 0;
+      for (k = 0; k < 8; k++){
+        var x2 = x1 + NB[k][0], y2 = y1 + NB[k][1]; if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h) continue;
+        var j = y2 * w + x2;
+        if (known[j]){ var wt = NB[k][2]; sw += wt; sr += R[j] * wt; sg += G[j] * wt; sb += B[j] * wt; }
+        else if (!queued[j]){ queued[j] = 1; next.push(j); }
+      }
+      if (sw){ vals[f * 3] = sr / sw; vals[f * 3 + 1] = sg / sw; vals[f * 3 + 2] = sb / sw; }
+    }
+    for (f = 0; f < front.length; f++){ i = front[f]; R[i] = vals[f * 3]; G[i] = vals[f * 3 + 1]; B[i] = vals[f * 3 + 2]; known[i] = 1; }
+    front = next;
+  }
+  var idxs = []; for (i = 0; i < n; i++) if (m[i]) idxs.push(i);
+  for (var it = 0; it < 40; it++){
+    for (var q = 0; q < idxs.length; q++){
+      i = idxs[q]; var cx = i % w, cy = (i / w) | 0, s = 0, ar = 0, ag = 0, ab = 0;
+      if (cx > 0){ ar += R[i - 1]; ag += G[i - 1]; ab += B[i - 1]; s++; }
+      if (cx < w - 1){ ar += R[i + 1]; ag += G[i + 1]; ab += B[i + 1]; s++; }
+      if (cy > 0){ ar += R[i - w]; ag += G[i - w]; ab += B[i - w]; s++; }
+      if (cy < h - 1){ ar += R[i + w]; ag += G[i + w]; ab += B[i + w]; s++; }
+      R[i] = ar / s; G[i] = ag / s; B[i] = ab / s;
+    }
+  }
+  for (q = 0; q < idxs.length; q++){ i = idxs[q]; px[i * 4] = R[i]; px[i * 4 + 1] = G[i]; px[i * 4 + 2] = B[i]; }
+}
+
+/* ---------- recolor ---------- */
+function kmeans(S, k){
+  function dd(a, b){ var r = a[0] - b[0], g = a[1] - b[1], bl = a[2] - b[2]; return 0.30 * r * r + 0.59 * g * g + 0.11 * bl * bl; }
+  var C = [S[0].slice()];
+  while (C.length < k){
+    var best = -1, bi = 0;
+    for (var i = 0; i < S.length; i++){ var md = Infinity; for (var c = 0; c < C.length; c++) md = Math.min(md, dd(S[i], C[c])); if (md > best){ best = md; bi = i; } }
+    if (best < 300) break;
+    C.push(S[bi].slice());
+  }
+  var lab = new Int32Array(S.length);
+  for (var it = 0; it < 10; it++){
+    var sum = C.map(function(){ return [0, 0, 0, 0]; });
+    for (var j = 0; j < S.length; j++){ var b = 0, bd = Infinity; for (var c2 = 0; c2 < C.length; c2++){ var v = dd(S[j], C[c2]); if (v < bd){ bd = v; b = c2; } } lab[j] = b; sum[b][0] += S[j][0]; sum[b][1] += S[j][1]; sum[b][2] += S[j][2]; sum[b][3]++; }
+    for (var c3 = 0; c3 < C.length; c3++) if (sum[c3][3]) C[c3] = [sum[c3][0] / sum[c3][3], sum[c3][1] / sum[c3][3], sum[c3][2] / sum[c3][3]];
+  }
+  return { C: C, lab: lab, dd: dd };
+}
+function recolor(img, mk, hex, letters){
+  var w = mk.w, h = mk.h, n = w * h, px = img.data, m = mk.m, t = hexRGB(hex), i, x, y;
+  if (!letters && !pickColor){
+    var sl = 0, c2 = 0; for (i = 0; i < n; i++) if (m[i]){ sl += 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]; c2++; }
+    if (!c2) return false;
+    var ml = sl / c2;
+    for (i = 0; i < n; i++) if (m[i]){ var off = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2] - ml; px[i * 4] = t[0] + off; px[i * 4 + 1] = t[1] + off; px[i * 4 + 2] = t[2] + off; }
+    return true;
+  }
+  // sample the area; remember which samples sit on its edge
+  var S = [], E = [], cnt = 0;
+  for (i = 0; i < n; i++) if (m[i]) cnt++;
+  var step = Math.max(1, Math.floor(cnt / 6000)), q = 0;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    i = y * w + x; if (!m[i]) continue;
+    var edge = x === 0 || y === 0 || x === w - 1 || y === h - 1 || !m[i - 1] || !m[i + 1] || !m[i - w] || !m[i + w];
+    if (edge || (q++ % step) === 0){ S.push([px[i * 4], px[i * 4 + 1], px[i * 4 + 2]]); E.push(edge ? 1 : 0); }
+  }
+  if (S.length < 4) return false;
+  var K = kmeans(S, 6), C = K.C, dd = K.dd, src;
+  if (pickColor){ src = pickColor; }
+  else {
+    var tot = C.map(function(){ return 0; }), ed = C.map(function(){ return 0; }), nE = 0;
+    for (var j = 0; j < S.length; j++){ tot[K.lab[j]]++; if (E[j]){ ed[K.lab[j]]++; nE++; } }
+    var bestScore = Infinity, bc = 0;
+    for (var c = 0; c < C.length; c++){
+      var frac = tot[c] / S.length; if (frac < 0.03) continue;
+      var score = (ed[c] / Math.max(1, nE)) / frac;
+      if (score < bestScore){ bestScore = score; bc = c; }
+    }
+    src = C[bc];
+  }
+  // distance from the text color to the nearest other color in the area
+  var dc = Infinity;
+  for (var c4 = 0; c4 < C.length; c4++){ var v = dd(src, C[c4]); if (v > 100) dc = Math.min(dc, v); }
+  dc = isFinite(dc) ? Math.sqrt(dc) : 120;
+  var t0 = dc * 0.22, t1 = dc * 0.62, did = false;
+  for (i = 0; i < n; i++){
+    if (!m[i]) continue;
+    var d = Math.sqrt(dd([px[i * 4], px[i * 4 + 1], px[i * 4 + 2]], src));
+    if (d >= t1) continue;
+    var a = d <= t0 ? 1 : 1 - (d - t0) / (t1 - t0);
+    px[i * 4] += a * (t[0] - src[0]); px[i * 4 + 1] += a * (t[1] - src[1]); px[i * 4 + 2] += a * (t[2] - src[2]);
+    did = true;
+  }
+  return did;
+}
+
+
+/* ---------- AI eraser (small on-device model) ---------- */
+var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+var ORT_URL = ORT_BASE + "ort.wasm.min.js";
+var MIGAN_URL = "https://huggingface.co/andraniksargsyan/migan/resolve/main/migan_pipeline_v2.onnx";
+var MIGAN_MB = 28.1;
+var AI_CACHE = "edit-ai-eraser-v1";
+var ai = { state: "idle", sess: null, promise: null, loadMs: 0, runs: [], err: "", fromCache: false };
+var eraseEngine = "ai", baseVer = 0;
+function loadScript(url){
+  return new Promise(function(res, rej){
+    var s = document.createElement("script"); s.src = url; s.async = true; s.crossOrigin = "anonymous";
+    s.onload = function(){ res(); }; s.onerror = function(){ rej(new Error("could not load " + url.split("/").pop())); };
+    document.head.appendChild(s);
+  });
+}
+async function fetchModel(onProg){
+  var cache = null;
+  try { if (window.caches && window.isSecureContext !== false){ cache = await caches.open(AI_CACHE); var hit = await cache.match(MIGAN_URL); if (hit){ ai.fromCache = true; return new Uint8Array(await hit.arrayBuffer()); } } } catch(_){ cache = null; }
+  var res = await fetch(MIGAN_URL, { mode: "cors", credentials: "omit" });
+  if (!res.ok) throw new Error("AI download failed (" + res.status + ")");
+  var total = +res.headers.get("content-length") || Math.round(MIGAN_MB * 1e6), buf;
+  if (res.body && res.body.getReader){
+    var reader = res.body.getReader(), got = 0; buf = new Uint8Array(total);
+    for (;;){
+      var r = await reader.read(); if (r.done) break;
+      if (got + r.value.length > buf.length){ var nb = new Uint8Array(Math.max(buf.length * 1.5, got + r.value.length) | 0); nb.set(buf.subarray(0, got)); buf = nb; }
+      buf.set(r.value, got); got += r.value.length; onProg(got, total);
+    }
+    if (got !== buf.length) buf = buf.slice(0, got);
+  } else buf = new Uint8Array(await res.arrayBuffer());
+  if (cache){ try { await cache.put(MIGAN_URL, new Response(buf, { headers: { "content-type": "application/octet-stream" } })); } catch(_){} }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(_){}
+  return buf;
+}
+function loadAI(){
+  if (ai.promise) return ai.promise;
+  ai.state = "loading";
+  ai.promise = (async function(){
+    var t0 = performance.now();
+    if (!window.ort) await loadScript(ORT_URL);
+    ort.env.wasm.wasmPaths = ORT_BASE;
+    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
+    var bytes = await fetchModel(function(g, t){ if (busy) setPill("Getting the AI eraser " + Math.round(g / 1e6) + " of " + Math.round(t / 1e6) + " MB (first time only)"); });
+    if (busy) setPill("Starting the AI eraser\u2026");
+    ai.sess = await ort.InferenceSession.create(bytes, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+    ai.loadMs = Math.round(performance.now() - t0); ai.state = "ready"; return true;
+  })().catch(function(e){ ai.state = "failed"; ai.err = String(e && e.message || e); ai.promise = null; console.warn("AI eraser:", e); return false; });
+  return ai.promise;
+}
+async function runMigan(rgb, mask){
+  var feeds = { image: new ort.Tensor("uint8", rgb, [1, 3, 512, 512]), mask: new ort.Tensor("uint8", mask, [1, 1, 512, 512]) };
+  var t0 = performance.now();
+  var out = await ai.sess.run(feeds);
+  ai.runs.push(Math.round(performance.now() - t0));
+  var k = Object.keys(out)[0]; return out[k].data;
+}
+function hash2(x, y){ var h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+function gnoise(x, y){ return (hash2(x, y) + hash2(x + 7919, y + 104729) + hash2(x + 31, y - 977) - 1.5) * 2; }
+function vnoise(x, y, cell){
+  var fx = x / cell, fy = y / cell, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
+  tx = tx * tx * (3 - 2 * tx); ty = ty * ty * (3 - 2 * ty);
+  var a = hash2(ix, iy), b = hash2(ix + 1, iy), c = hash2(ix, iy + 1), d = hash2(ix + 1, iy + 1);
+  return ((a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty - 0.5) * 4.2;
+}
+function boxBlurF(src, w, h, r){
+  if (r < 1) return src.slice();
+  var tmp = new Float32Array(w * h), out = new Float32Array(w * h), x, y, s, n;
+  for (y = 0; y < h; y++){ var row = y * w; s = 0; n = 0;
+    for (x = 0; x < Math.min(r, w); x++){ s += src[row + x]; n++; }
+    for (x = 0; x < w; x++){ if (x + r < w){ s += src[row + x + r]; n++; } if (x - r - 1 >= 0){ s -= src[row + x - r - 1]; n--; } tmp[row + x] = s / n; } }
+  for (x = 0; x < w; x++){ s = 0; n = 0;
+    for (y = 0; y < Math.min(r, h); y++){ s += tmp[y * w + x]; n++; }
+    for (y = 0; y < h; y++){ if (y + r < h){ s += tmp[(y + r) * w + x]; n++; } if (y - r - 1 >= 0){ s -= tmp[(y - r - 1) * w + x]; n--; } out[y * w + x] = s / n; } }
+  return out;
+}
+function hpNoise(px, sel, w, h){
+  // high-pass std of luminance over selected pixels (3x3 mean removed)
+  var s = 0, n = 0;
+  for (var y = 1; y < h - 1; y++) for (var x = 1; x < w - 1; x++){
+    var i = y * w + x; if (!sel[i]) continue;
+    var L = function(j){ return 0.299 * px[j * 4] + 0.587 * px[j * 4 + 1] + 0.114 * px[j * 4 + 2]; };
+    var c = L(i), m = (L(i - 1) + L(i + 1) + L(i - w) + L(i + w) + L(i - w - 1) + L(i - w + 1) + L(i + w - 1) + L(i + w + 1)) / 8;
+    s += (c - m) * (c - m); n++;
+  }
+  return n > 20 ? Math.sqrt(s / n) : 0;
+}
+async function inpaintAI(img, m, mk){
+  var i, x, y, n = mk.w * mk.h;
+  var mx0 = mk.w, my0 = mk.h, mx1 = -1, my1 = -1;
+  for (y = 0; y < mk.h; y++) for (x = 0; x < mk.w; x++) if (m[y * mk.w + x]){ if (x < mx0) mx0 = x; if (x > mx1) mx1 = x; if (y < my0) my0 = y; if (y > my1) my1 = y; }
+  if (mx1 < 0) return;
+  var gx0 = mk.x + mx0, gy0 = mk.y + my0, bw = mx1 - mx0 + 1, bh = my1 - my0 + 1;
+  var hcount = 0; for (i = 0; i < m.length; i++) if (m[i]) hcount++;
+  var dens = hcount / (bw * bh);
+  var sc = Math.max(1, (Math.min(bw, bh) * 1.8 + 64) / 512);
+  if (Math.max(bw, bh) / Math.min(bw, bh) < 3) sc = Math.max(sc, Math.max(bw, bh) * 2.6 / 512);
+
+  var wsx = Math.min(Math.round(512 * sc), W), wsy = Math.min(Math.round(512 * sc), H);
+  // working region U
+  var ux = Math.max(0, gx0 - wsx), uy = Math.max(0, gy0 - wsy), ux2 = Math.min(W, gx0 + bw + wsx), uy2 = Math.min(H, gy0 + bh + wsy);
+  var UW = ux2 - ux, UH = uy2 - uy;
+  var U = bctx.getImageData(ux, uy, UW, UH), ud = U.data;
+  // paste the caller's current pixels (already edited) into U
+  for (y = 0; y < mk.h; y++) for (x = 0; x < mk.w; x++){ var gi = ((mk.y + y - uy) * UW + (mk.x + x - ux)) * 4, li = (y * mk.w + x) * 4; ud[gi] = img.data[li]; ud[gi + 1] = img.data[li + 1]; ud[gi + 2] = img.data[li + 2]; }
+  var hole = new Uint8Array(UW * UH), rem = new Uint8Array(UW * UH);
+  for (y = 0; y < mk.h; y++) for (x = 0; x < mk.w; x++) if (m[y * mk.w + x]){ var k = (mk.y + y - uy) * UW + (mk.x + x - ux); hole[k] = 1; rem[k] = 1; }
+  var ringSel = dilate(hole, UW, UH, 7), inner = dilate(hole, UW, UH, 2);
+  for (i = 0; i < ringSel.length; i++) if (inner[i]) ringSel[i] = 0;
+  var ringNoise = hpNoise(ud, ringSel, UW, UH);
+  var uc = document.createElement("canvas"); uc.width = UW; uc.height = UH; var ucx = uc.getContext("2d");
+  var c5 = document.createElement("canvas"); c5.width = 512; c5.height = 512; var c5x = c5.getContext("2d", { willReadFrequently: true });
+  var mc = document.createElement("canvas"), mcx = mc.getContext("2d");
+  var filled = new Uint8Array(UW * UH), iter = 0;
+  while (iter++ < 30){
+    var rx0 = UW, ry0 = UH, rx1 = -1, ry1 = -1;
+    for (y = 0; y < UH; y++) for (x = 0; x < UW; x++) if (rem[y * UW + x]){ if (x < rx0) rx0 = x; if (x > rx1) rx1 = x; if (y < ry0) ry0 = y; if (y > ry1) ry1 = y; }
+    if (rx1 < 0) break;
+    var horiz = (rx1 - rx0) >= (ry1 - ry0), cpad = Math.round(Math.min(wsx, wsy) * 0.18), wx, wy;
+    var sy = 0, sn = 0;
+    if (horiz){ for (y = ry0; y <= ry1; y++) for (x = rx0; x < Math.min(rx1 + 1, rx0 + wsx - 2 * cpad); x++) if (rem[y * UW + x]){ sy += y; sn++; } }
+    else { for (y = ry0; y < Math.min(ry1 + 1, ry0 + wsy - 2 * cpad); y++) for (x = rx0; x <= rx1; x++) if (rem[y * UW + x]){ sy += x; sn++; } }
+    var mid = sn ? sy / sn : (horiz ? (ry0 + ry1) / 2 : (rx0 + rx1) / 2);
+    if (horiz){ wx = rx0 - cpad; wy = Math.round(mid - wsy / 2); }
+    else { wy = ry0 - cpad; wx = Math.round(mid - wsx / 2); }
+    if (horiz && rx1 - rx0 + 1 <= wsx - 2 * cpad) wx = Math.round((rx0 + rx1) / 2 - wsx / 2);
+    if (!horiz && ry1 - ry0 + 1 <= wsy - 2 * cpad) wy = Math.round((ry0 + ry1) / 2 - wsy / 2);
+    wx = Math.max(0, Math.min(UW - wsx, wx)); wy = Math.max(0, Math.min(UH - wsy, wy));
+    var ww = Math.min(wsx, UW), wh = Math.min(wsy, UH);
+    // image tile -> 512
+    ucx.putImageData(U, 0, 0);
+    c5x.imageSmoothingEnabled = true; c5x.imageSmoothingQuality = "high";
+    c5x.clearRect(0, 0, 512, 512); c5x.drawImage(uc, wx, wy, ww, wh, 0, 0, 512, 512);
+    var t5 = c5x.getImageData(0, 0, 512, 512).data;
+    // mask tile -> 512 (any coverage = hole)
+    mc.width = ww; mc.height = wh; var md = mcx.createImageData(ww, wh);
+    for (y = 0; y < wh; y++) for (x = 0; x < ww; x++) if (rem[(wy + y) * UW + wx + x]) md.data[(y * ww + x) * 4 + 3] = 255;
+    mcx.putImageData(md, 0, 0);
+    c5x.clearRect(0, 0, 512, 512); c5x.drawImage(mc, 0, 0, ww, wh, 0, 0, 512, 512);
+    var m5 = c5x.getImageData(0, 0, 512, 512).data;
+    var rgb = new Uint8Array(3 * 262144), msk = new Uint8Array(262144);
+    for (i = 0; i < 262144; i++){ rgb[i] = t5[i * 4]; rgb[262144 + i] = t5[i * 4 + 1]; rgb[524288 + i] = t5[i * 4 + 2]; msk[i] = m5[i * 4 + 3] > 6 ? 0 : 255; }
+    // grow the hole by 1px at 512 so edge halos are regenerated
+    var msk2 = msk.slice();
+    for (y = 1; y < 511; y++) for (x = 1; x < 511; x++){ i = y * 512 + x; if (msk[i] && (!msk[i - 1] || !msk[i + 1] || !msk[i - 512] || !msk[i + 512])) msk2[i] = 0; }
+    var out = await runMigan(rgb, msk2);
+    var od = c5x.createImageData(512, 512);
+    for (i = 0; i < 262144; i++){ od.data[i * 4] = out[i]; od.data[i * 4 + 1] = out[262144 + i]; od.data[i * 4 + 2] = out[524288 + i]; od.data[i * 4 + 3] = 255; }
+    c5x.putImageData(od, 0, 0);
+    var tc = document.createElement("canvas"); tc.width = ww; tc.height = wh; var tcx = tc.getContext("2d", { willReadFrequently: true });
+    tcx.imageSmoothingEnabled = true; tcx.imageSmoothingQuality = "high"; tcx.drawImage(c5, 0, 0, 512, 512, 0, 0, ww, wh);
+    var rd = tcx.getImageData(0, 0, ww, wh).data; tc.width = 0;
+    // which pixels this tile is trusted for (keep away from window edges unless at the image edge)
+    var mg = Math.round(Math.min(ww, wh) * 0.1);
+    var ix0 = wx + ux === 0 ? 0 : mg, iy0 = wy + uy === 0 ? 0 : mg, ix1 = wx + ww + ux >= W ? ww : ww - mg, iy1 = wy + wh + uy >= H ? wh : wh - mg;
+    var any = 0;
+    for (y = iy0; y < iy1; y++) for (x = ix0; x < ix1; x++) if (rem[(wy + y) * UW + wx + x]) any++;
+    var trustAll = !any;
+    for (y = 0; y < wh; y++) for (x = 0; x < ww; x++){
+      var ui = (wy + y) * UW + wx + x; if (!rem[ui]) continue;
+      var inside = x >= ix0 && x < ix1 && y >= iy0 && y < iy1;
+      if (!inside && !trustAll) { var j0 = (y * ww + x) * 4; ud[ui * 4] = rd[j0]; ud[ui * 4 + 1] = rd[j0 + 1]; ud[ui * 4 + 2] = rd[j0 + 2]; continue; }
+      var j = (y * ww + x) * 4; ud[ui * 4] = rd[j]; ud[ui * 4 + 1] = rd[j + 1]; ud[ui * 4 + 2] = rd[j + 2]; rem[ui] = 0; filled[ui] = 1;
+    }
+    await nextFrame();
+  }
+  // grain match: add noise to the fill if it is smoother than its surroundings
+  var fillNoise = hpNoise(ud, filled, UW, UH), add = Math.sqrt(Math.max(0, ringNoise * ringNoise - fillNoise * fillNoise)) * 0.85;
+  // write back into img: feather 1-2px outside the hole
+  var Fm = new Float32Array(UW * UH); for (i = 0; i < Fm.length; i++) Fm[i] = hole[i];
+  var fr = Math.max(1, Math.round(sc));
+  var Fb = boxBlurF(boxBlurF(Fm, UW, UH, fr), UW, UH, fr);
+  var orig = bctx.getImageData(ux, uy, UW, UH).data;
+  for (y = 0; y < mk.h; y++) for (x = 0; x < mk.w; x++){
+    var u2 = (mk.y + y - uy) * UW + (mk.x + x - ux), l2 = (y * mk.w + x) * 4;
+    var a = hole[u2] ? 1 : Math.min(1, Fb[u2] * 2); if (a <= 0) continue;
+    var nz = hole[u2] && add > 0.3 ? gnoise(mk.x + x, mk.y + y) * add : 0;
+    for (var ch = 0; ch < 3; ch++){ var v = ud[u2 * 4 + ch] + nz; img.data[l2 + ch] = a * v + (1 - a) * img.data[l2 + ch]; }
+  }
+  uc.width = 0; c5.width = 0; mc.width = 0;
+}
+async function fillHole(img, m, mk){
+  if (eraseEngine === "ai"){
+    if (ai.state !== "ready"){ setPill(ai.fromCache ? "Starting the AI eraser\u2026" : "Getting the AI eraser (first time only)\u2026"); await loadAI(); }
+    if (ai.state === "ready"){
+      setPill("AI erasing\u2026"); await nextFrame();
+      try { await inpaintAI(img, m, mk); return "ai"; } catch (e){ console.warn("AI erase failed", e); ai.err = String(e && e.message || e); }
+    }
+    if (!fillHole._warned){ fillHole._warned = true; showMsg("The AI eraser couldn\u2019t start here (" + (ai.err || "no connection") + "), so the fast eraser was used."); }
+  }
+  if (cvState !== "ready" && cvState !== "failed"){ setPill("Loading eraser\u2026 (first time only)"); await loadCv(); }
+  setPill("Erasing\u2026"); await nextFrame();
+  if (cv && cvState === "ready"){ try { inpaintCv(img, m, mk.w, mk.h); return "cv"; } catch (_){} }
+  inpaintJs(img, m, mk.w, mk.h); return "js";
+}
+
+/* ---------- text analysis (for Change text + Recolor) ---------- */
+function lum3(p, i){ return 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; }
+function median(a){ if (!a.length) return 0; var b = a.slice().sort(function(p, q){ return p - q; }); return b[b.length >> 1]; }
+function pct(a, f){ if (!a.length) return 0; var b = a.slice().sort(function(p, q){ return p - q; }); return b[Math.max(0, Math.min(b.length - 1, Math.round(f * (b.length - 1))))]; }
+function labelComps(core, w, h){
+  var lab = new Int32Array(w * h), comps = [], stack = new Int32Array(w * h), id = 0;
+  for (var i = 0; i < w * h; i++){
+    if (!core[i] || lab[i]) continue;
+    id++; var sp = 0; stack[sp++] = i; lab[i] = id;
+    var c = { id: id, n: 0, x0: w, y0: h, x1: -1, y1: -1, border: false };
+    while (sp){
+      var j = stack[--sp], x = j % w, y = (j / w) | 0; c.n++;
+      if (x < c.x0) c.x0 = x; if (x > c.x1) c.x1 = x; if (y < c.y0) c.y0 = y; if (y > c.y1) c.y1 = y;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) c.border = true;
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++){
+        if (!dx && !dy) continue; var xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+        var k = yy * w + xx; if (core[k] && !lab[k]){ lab[k] = id; stack[sp++] = k; }
+      }
+    }
+    comps.push(c);
+  }
+  return { lab: lab, comps: comps };
+}
+// find text vs background colors inside an area; returns soft letter alpha + local background
+function segmentText(img, w, h, sel, forced, wide){
+  var px = img.data, n = w * h, i, x, y;
+  var S = [], E = [], cnt = 0;
+  for (i = 0; i < n; i++) if (sel[i]) cnt++;
+  if (cnt < 16) return null;
+  var step = Math.max(1, Math.floor(cnt / 6000)), q = 0;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    i = y * w + x; if (!sel[i]) continue;
+    var edge = x === 0 || y === 0 || x === w - 1 || y === h - 1 || !sel[i - 1] || !sel[i + 1] || !sel[i - w] || !sel[i + w];
+    if (edge || (q++ % step) === 0){ S.push([px[i * 4], px[i * 4 + 1], px[i * 4 + 2]]); E.push(edge ? 1 : 0); }
+  }
+  var K = kmeans(S, 6), C = K.C, dd = K.dd, src;
+  var tot = C.map(function(){ return 0; }), ed = C.map(function(){ return 0; }), nE = 0;
+  for (var j = 0; j < S.length; j++){ tot[K.lab[j]]++; if (E[j]){ ed[K.lab[j]]++; nE++; } }
+  if (forced){ src = forced.slice(); }
+  else {
+    var bestScore = Infinity, bc = 0;
+    for (var c = 0; c < C.length; c++){
+      var frac = tot[c] / S.length; if (frac < 0.02) continue;
+      var score = (ed[c] / Math.max(1, nE) + 0.01) / frac;
+      if (score < bestScore){ bestScore = score; bc = c; }
+    }
+    src = C[bc];
+  }
+  var dc = Infinity;
+  for (var c4 = 0; c4 < C.length; c4++){ var v = dd(src, C[c4]); if (v > 150) dc = Math.min(dc, v); }
+  dc = isFinite(dc) ? Math.sqrt(dc) : 120;
+  // background colors = the ones that fill the edge of the area
+  var isBg = C.map(function(cc, ci){ var e = ed[ci] / Math.max(1, nE), f = tot[ci] / S.length; return dd(cc, src) > 150 && (e >= 0.12 || (e / Math.max(0.001, f)) > 0.9); });
+  if (!isBg.some(function(b){ return b; })){ var bi2 = 0, be = -1; for (var c6 = 0; c6 < C.length; c6++) if (ed[c6] > be && dd(C[c6], src) > 150){ be = ed[c6]; bi2 = c6; } isBg[bi2] = true; }
+  // candidate letter pixels: close to the text color, or (wide) not close to any background color
+  var cand = new Uint8Array(n), strict = new Uint8Array(n);
+  for (i = 0; i < n; i++){
+    if (!sel[i]) continue;
+    var p = [px[i * 4], px[i * 4 + 1], px[i * 4 + 2]], dt = dd(p, src), near = true, dbg = Infinity;
+    for (var c5 = 0; c5 < C.length; c5++){ var dv = dd(p, C[c5]); if (isBg[c5] && dv < dbg) dbg = dv; if (dd(src, C[c5]) > 150 && dv < dt) near = false; }
+    if (near && Math.sqrt(dt) <= dc * 0.5){ cand[i] = 1; strict[i] = 1; }
+    else if (wide && Math.sqrt(dbg) > Math.max(28, dc * 0.3) && dbg > dt * 0.6) cand[i] = 1;
+  }
+  // drop big blobs that run into the edge of the area (photo, not letters) and specks
+  var L = labelComps(cand, w, h), totalC = 0;
+  L.comps.forEach(function(c){ totalC += c.n; });
+  var kill = {}, minA = Math.max(2, Math.round(n * 0.00015));
+  L.comps.forEach(function(c){
+    var big = c.n > totalC * 0.25 && L.comps.length > 2, wide = (c.x1 - c.x0) > w * 0.8 || (c.y1 - c.y0) > h * 0.9;
+    if ((c.border && (big || wide)) || c.n < minA) kill[c.id] = 1;
+  });
+  for (i = 0; i < n; i++) if (cand[i] && kill[L.lab[i]]) cand[i] = 0;
+  var hole = dilate(cand, w, h, 2);
+  for (i = 0; i < n; i++) if (!sel[i]) hole[i] = 0;
+  var bgImg = { data: new Uint8ClampedArray(px) };
+  inpaintJs(bgImg, hole, w, h);
+  var bg = bgImg.data, A = new Float32Array(n), A0 = new Float32Array(n);
+  for (i = 0; i < n; i++){
+    if (!hole[i]) continue;
+    var b0 = bg[i * 4], b1 = bg[i * 4 + 1], b2 = bg[i * 4 + 2];
+    var v0 = src[0] - b0, v1 = src[1] - b1, v2 = src[2] - b2, L2 = v0 * v0 + v1 * v1 + v2 * v2;
+    if (L2 < 500){ A[i] = cand[i] ? 1 : 0; A0[i] = A[i]; continue; }
+    var a = ((px[i * 4] - b0) * v0 + (px[i * 4 + 1] - b1) * v1 + (px[i * 4 + 2] - b2) * v2) / L2;
+    A[i] = a < 0 ? 0 : (a > 1 ? 1 : a); A0[i] = A[i];
+    if (cand[i] && !strict[i] && A[i] < 0.75) A[i] = 0.75;
+  }
+  return { A: A, A0: A0, cand: cand, strict: strict, hole: hole, bg: bg, src: src, dc: dc };
+}
+function findAngle(core, w, h){
+  var P = [], i, cnt = 0;
+  for (i = 0; i < w * h; i++) if (core[i]) cnt++;
+  var step = Math.max(1, Math.floor(cnt / 9000));
+  for (i = 0; i < w * h; i++) if (core[i] && (i % step) === 0) P.push(i % w, (i / w) | 0);
+  if (P.length < 20) return 0;
+  function score(deg){
+    var a = deg * Math.PI / 180, s = Math.sin(a), c = Math.cos(a), hist = {}, sum = 0;
+    for (var k = 0; k < P.length; k += 2){ var b = Math.round(-P[k] * s + P[k + 1] * c); hist[b] = (hist[b] || 0) + 1; }
+    for (var key in hist) sum += hist[key] * hist[key];
+    return sum;
+  }
+  var best = 0, bs = score(0), d;
+  for (var st = 1; st <= 20; st++) [st, -st].forEach(function(dv){ var v = score(dv); if (v > bs * 1.003){ bs = v; best = dv; } });
+  var b2 = best;
+  for (d = best - 1; d <= best + 1.0001; d += 0.1){ var v2 = score(d); if (v2 > bs){ bs = v2; b2 = d; } }
+  if (Math.abs(b2) < 0.35) b2 = 0;
+  return b2 * Math.PI / 180;
+}
+function deskew(A, w, h, ang){
+  var c = Math.cos(ang), s = Math.sin(ang);
+  var w2 = Math.ceil(Math.abs(w * c) + Math.abs(h * s)) + 2, h2 = Math.ceil(Math.abs(w * s) + Math.abs(h * c)) + 2;
+  var D = new Float32Array(w2 * h2);
+  for (var y2 = 0; y2 < h2; y2++) for (var x2 = 0; x2 < w2; x2++){
+    var u = x2 - w2 / 2, v = y2 - h2 / 2, x = w / 2 + u * c - v * s - 0.5, y = h / 2 + u * s + v * c - 0.5;
+    var xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi;
+    if (xi < 0 || yi < 0 || xi >= w - 1 || yi >= h - 1) continue;
+    var k = yi * w + xi;
+    D[y2 * w2 + x2] = (A[k] * (1 - fx) + A[k + 1] * fx) * (1 - fy) + (A[k + w] * (1 - fx) + A[k + w + 1] * fx) * fy;
+  }
+  return { D: D, w: w2, h: h2, toBox: function(x2, y2){ var u = x2 - w2 / 2, v = y2 - h2 / 2; return { x: w / 2 + u * c - v * s, y: h / 2 + u * s + v * c }; } };
+}
+function glyphStats(A, w, h){
+  var n = w * h, core = new Uint8Array(n), i, x, y;
+  for (i = 0; i < n; i++) core[i] = A[i] > 0.5 ? 1 : 0;
+  var L = labelComps(core, w, h), comps = L.comps.filter(function(c){ return c.n >= 2; });
+  if (!comps.length) return null;
+  var prof = new Float32Array(h), mx = 0;
+  for (y = 0; y < h; y++){ var s = 0; for (x = 0; x < w; x++) s += core[y * w + x]; prof[y] = s; if (s > mx) mx = s; }
+  var thr = Math.max(1, mx * 0.05), bands = [], b = null;
+  for (y = 0; y < h; y++){ if (prof[y] >= thr){ if (!b){ b = { y0: y, y1: y }; bands.push(b); } else b.y1 = y; } else b = null; }
+  // merge accents / dots / small gaps
+  for (var k = bands.length - 2; k >= 0; k--){
+    var A1 = bands[k], B1 = bands[k + 1], hA = A1.y1 - A1.y0 + 1, hB = B1.y1 - B1.y0 + 1, gap = B1.y0 - A1.y1 - 1, big = Math.max(hA, hB), small = Math.min(hA, hB);
+    if (gap < 0.25 * big || (small < 0.4 * big && gap < 0.6 * big)){ A1.y1 = B1.y1; bands.splice(k + 1, 1); }
+  }
+  var out = [];
+  bands.forEach(function(bd){
+    var hb = bd.y1 - bd.y0 + 1;
+    var bc = comps.filter(function(c){ var cy = (c.y0 + c.y1) / 2; return cy >= bd.y0 - 1 && cy <= bd.y1 + 1; });
+    if (!bc.length) return;
+    var main = bc.filter(function(c){ return c.y1 - c.y0 + 1 >= 0.45 * hb; }); if (!main.length) main = bc;
+    var base = median(main.map(function(c){ return c.y1 + 1; }));
+    var onBase = main.filter(function(c){ return Math.abs(c.y1 + 1 - base) <= Math.max(2, 0.12 * hb); }); if (onBase.length) main = onBase;
+    var tops = main.map(function(c){ return c.y0; }).sort(function(p, q){ return p - q; });
+    var R = Math.max(2, base - tops[0]), c1 = tops[0], c2 = tops[tops.length - 1], ga = [], gb = [];
+    for (var it2 = 0; it2 < 10; it2++){
+      ga = []; gb = []; tops.forEach(function(v){ if (Math.abs(v - c1) <= Math.abs(v - c2)) ga.push(v); else gb.push(v); });
+      if (!ga.length || !gb.length) break; c1 = ga.reduce(function(p, q){ return p + q; }, 0) / ga.length; c2 = gb.reduce(function(p, q){ return p + q; }, 0) / gb.length;
+    }
+    var capTop, xTop;
+    if (ga.length && gb.length && c2 - c1 > 0.12 * R){ capTop = median(ga); xTop = median(gb); }
+    else { capTop = median(tops); xTop = capTop; }
+    // profile-based cap / x-height (robust to broken-up letters)
+    var pm = 0, yb = Math.min(h - 1, Math.round(base) - 1);
+    for (y = bd.y0; y <= yb; y++) if (prof[y] > pm) pm = prof[y];
+    var pTop = -1, pX = -1;
+    for (y = bd.y0; y <= yb; y++){ if (pTop < 0 && prof[y] >= pm * 0.1) pTop = y; if (pX < 0 && prof[y] >= pm * 0.5) pX = y; }
+    if (pTop >= 0 && pX >= 0){ capTop = pTop; xTop = (base - pX) / Math.max(1, base - pTop) < 0.84 ? pX : pTop; }
+    var capH = Math.max(2, base - capTop);
+    var sorted = bc.slice().sort(function(p, q){ return p.x0 - q.x0; }), gl = [];
+    sorted.forEach(function(c){ var g = gl[gl.length - 1]; if (g && c.x0 <= g.x1 + 1){ g.x1 = Math.max(g.x1, c.x1); g.n += c.n; } else gl.push({ x0: c.x0, x1: c.x1, n: c.n }); });
+    var widths = gl.map(function(g){ return g.x1 - g.x0 + 1; }), gaps = [];
+    for (var q = 1; q < gl.length; q++) gaps.push(gl[q].x0 - gl[q - 1].x1 - 1);
+    var hr = [], vr = [], ids = {};
+    bc.forEach(function(c){ ids[c.id] = 1; });
+    var yy0 = Math.max(0, Math.round(capTop)), yy1 = Math.min(h, Math.round(base));
+    for (y = yy0; y < yy1; y++){ var run = 0; for (x = 0; x <= w; x++){ var on = x < w && core[y * w + x] && ids[L.lab[y * w + x]]; if (on) run++; else if (run){ if (run < capH * 0.6) hr.push(run); run = 0; } } }
+    var gx0 = gl[0].x0, gx1 = gl[gl.length - 1].x1;
+    for (x = gx0; x <= gx1; x++){ var run2 = 0; for (y = yy0; y <= yy1; y++){ var on2 = y < yy1 && core[y * w + x] && ids[L.lab[y * w + x]]; if (on2) run2++; else if (run2){ if (run2 < capH * 0.6) vr.push(run2); run2 = 0; } } }
+    // core-weighted pixel count
+    var pix = 0; bc.forEach(function(c){ pix += c.n; });
+    out.push({ y0: bd.y0, y1: bd.y1, base: base, capTop: capTop, capH: capH, xr: (base - xTop) / capH, left: gx0, right: gx1 + 1,
+      sv: median(hr) || 1, sh: median(vr) || 1, gap: gaps.length ? median(gaps) : 0, wmed: median(widths), glyphs: gl.length, pix: pix });
+  });
+  if (!out.length) return null;
+  var mainB = out.reduce(function(p, q){ return q.pix > p.pix ? q : p; });
+  return { bands: out, main: mainB };
+}
+// candidate fonts for matching: [font index, weight]
+var FIT = null;
+function fitCands(){
+  if (FIT) return FIT;
+  function fi(n){ for (var i = 0; i < FONTS.length; i++) if (FONTS[i].n === n) return i; return 0; }
+  FIT = [["Helvetica",300],["Helvetica",400],["Helvetica",500],["Helvetica",700],["Helvetica",900],["Montserrat",300],["Montserrat",500],["Montserrat",700],["Montserrat",900],
+    ["Futura",400],["Futura",500],["Futura",700],["Didot",400],["Didot",700],["Times",400],["Times",700],["Oswald",300],["Oswald",500],["Oswald",700],["Bebas",400],["Anton",400],["Impact",400]]
+    .map(function(p){ return { font: fi(p[0]), weight: p[1] }; });
+  return FIT;
+}
+var statCache = {};
+function sampleStats(font, weight, caps){
+  var key = font + "|" + weight + "|" + caps;
+  if (statCache[key]) return statCache[key];
+  var fs = 100, str = caps ? "HAMBURGEFONTS" : "Hamburgefonts";
+  var t = { font: font, weight: weight, italic: false };
+  var c = document.createElement("canvas"), x = c.getContext("2d", { willReadFrequently: true });
+  x.font = fontOf(t, fs);
+  var wd = Math.ceil(x.measureText(str).width) + 40, hh = Math.ceil(fs * 1.6);
+  c.width = wd; c.height = hh; x.font = fontOf(t, fs); x.fillStyle = "#fff"; x.fillRect(0, 0, wd, hh); x.fillStyle = "#000"; x.textBaseline = "alphabetic";
+  x.fillText(str, 20, Math.round(fs * 1.15));
+  var d = x.getImageData(0, 0, wd, hh).data, A = new Float32Array(wd * hh);
+  for (var i = 0; i < A.length; i++) A[i] = 1 - d[i * 4] / 255;
+  var st = glyphStats(A, wd, hh);
+  x.textBaseline = "alphabetic"; var mH = x.measureText("H"); x.textBaseline = "middle"; var mM = x.measureText("H");
+  var r = st ? { sv: st.main.sv / st.main.capH, con: st.main.sh / st.main.sv, wr: st.main.wmed / st.main.capH, gap: st.main.gap / st.main.capH, capR: st.main.capH / fs } : null;
+  c.width = 0; statCache[key] = r; return r;
+}
+async function fitFont(o){
+  var caps = o.xr > 0.86, cands = fitCands();
+  if (document.fonts && document.fonts.load){
+    var loads = cands.map(function(cd){ var f = FONTS[cd.font]; return f.g ? document.fonts.load(fontOf({ font: cd.font, weight: cd.weight }, 40), "Hamburgefonts").catch(function(){}) : null; });
+    await Promise.race([Promise.all(loads), new Promise(function(r){ setTimeout(r, 5000); })]);
+  }
+  var svE = Math.max(1, o.sv - 0.5), shE = Math.max(1, o.sh - 0.5);
+  var osv = svE / o.capH, ocon = shE / svE, owr = o.wmed / o.capH, best = null, bd = Infinity, scored = [];
+  cands.forEach(function(cd){
+    var f = FONTS[cd.font];
+    if (o.capH < 28 && (f.n === "Futura" || f.n === "Montserrat")) return;
+    if (!caps && f.n === "Bebas") return;
+    if (f.g && document.fonts && document.fonts.check && !document.fonts.check(fontOf({ font: cd.font, weight: cd.weight }, 40))) return;
+    var s = sampleStats(cd.font, cd.weight, caps); if (!s) return;
+    var d = 2.4 * Math.abs(Math.log(s.sv / osv)) + 1.3 * Math.abs(Math.log(s.con / ocon)) + (o.glyphs >= 3 ? 1.1 : 0.4) * Math.abs(Math.log(s.wr / owr));
+    if (f.n === "Helvetica") d -= 0.3;
+    scored.push([f.n, cd.weight, +d.toFixed(3)]);
+    if (d < bd){ bd = d; best = { font: cd.font, weight: cd.weight, s: s }; }
+  });
+  if (!best){ best = { font: 0, weight: 500, s: sampleStats(0, 500, caps) }; }
+  var size = o.capH / best.s.capR;
+  var spacing = ((o.gap / o.capH) - best.s.gap) * o.capH / size;
+  best.size = size; best.spacing = Math.max(-0.05, Math.min(2, spacing)); best.scored = scored.sort(function(a, b){ return a[2] - b[2]; }).slice(0, 5); best.caps = caps;
+  return best;
+}
+function analyzeText(img, w, h){
+  var sel = new Uint8Array(w * h).fill(1);
+  var seg = segmentText(img, w, h, sel, pickColor, true);
+  if (!seg) return null;
+  var i;
+  // ignore bits poking in from the lines above/below (touch the top or bottom edge of the box)
+  var LC = labelComps(seg.cand, w, h), keepOut = {};
+  LC.comps.forEach(function(c){ var tb = c.y0 === 0 || c.y1 === h - 1; if (tb && (c.y1 - c.y0 + 1) < 0.5 * h && !(c.y0 === 0 && c.y1 === h - 1)) keepOut[c.id] = 1; });
+  var ko = new Uint8Array(w * h), anyKo = false; for (i = 0; i < w * h; i++) if (seg.cand[i] && keepOut[LC.lab[i]]){ ko[i] = 1; anyKo = true; }
+  if (anyKo){ var kd0 = dilate(ko, w, h, 2); for (i = 0; i < w * h; i++) if (kd0[i]){ seg.A0[i] = 0; seg.A[i] = 0; } }
+  var core = new Uint8Array(w * h), cnt = 0;
+  for (i = 0; i < w * h; i++) if (seg.A0[i] > 0.5){ core[i] = 1; cnt++; }
+  if (cnt < 12) return null;
+  var ang = findAngle(core, w, h);
+  var dk = deskew(seg.A0, w, h, ang), st = glyphStats(dk.D, dk.w, dk.h);
+  if (!st) return null;
+  var mb = st.main, px = img.data;
+  // colours: interior letter pixels, top vs bottom of the letters
+  var top = [0, 0, 0, 0], bot = [0, 0, 0, 0], all = [0, 0, 0, 0], ls = [], ca = Math.cos(ang), sa = Math.sin(ang);
+  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++){
+    i = y * w + x; if (seg.A[i] < 0.9) continue;
+    var u = x - w / 2, v = y - h / 2, yy = -u * sa + v * ca + dk.h / 2;
+    if (yy < mb.y0 - 2 || yy > mb.y1 + 2) continue;
+    var tt = (yy - mb.capTop) / Math.max(1, mb.base - mb.capTop), r = px[i * 4], g = px[i * 4 + 1], b = px[i * 4 + 2];
+    all[0] += r; all[1] += g; all[2] += b; all[3]++; ls.push(0.299 * r + 0.587 * g + 0.114 * b);
+    if (tt < 0.33){ top[0] += r; top[1] += g; top[2] += b; top[3]++; } else if (tt > 0.67){ bot[0] += r; bot[1] += g; bot[2] += b; bot[3]++; }
+  }
+  function avg(a){ return a[3] ? [a[0] / a[3], a[1] / a[3], a[2] / a[3]] : null; }
+  var col = avg(all) || seg.src, cT = avg(top), cB = avg(bot), grad = null;
+  if (cT && cB && top[3] > 30 && bot[3] > 30){ var dr = cT[0] - cB[0], dg = cT[1] - cB[1], db = cT[2] - cB[2]; if (Math.sqrt(dr * dr + dg * dg + db * db) > 22) grad = [cT, cB]; }
+  // ink texture: residual colors of the letter interiors (eroded), relative to the fill
+  var res = [], ninner = 0, small = mb.sv < 7, resPos = [], madStd = 0;
+  for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++){
+    i = y * w + x; if (seg.A[i] < 0.74 || !seg.cand[i]) continue;
+    if (small ? (seg.A0[i] < 0.6 || !seg.cand[i - 1] || !seg.cand[i + 1] || !seg.cand[i - w] || !seg.cand[i + w]) : (seg.A[i - 1] < 0.74 || seg.A[i + 1] < 0.74 || seg.A[i - w] < 0.74 || seg.A[i + w] < 0.74)) continue;
+    ninner++;
+    var fc = col;
+    if (grad){ var u3 = x - w / 2, v3 = y - h / 2, y3 = -u3 * sa + v3 * ca + dk.h / 2, t3 = Math.max(0, Math.min(1, ((y3 - mb.capTop) / Math.max(1, mb.base - mb.capTop) - 0.167) / 0.667)); fc = [grad[0][0] + (grad[1][0] - grad[0][0]) * t3, grad[0][1] + (grad[1][1] - grad[0][1]) * t3, grad[0][2] + (grad[1][2] - grad[0][2]) * t3]; }
+    res.push([Math.round(px[i * 4] - fc[0]), Math.round(px[i * 4 + 1] - fc[1]), Math.round(px[i * 4 + 2] - fc[2])]); resPos.push(i);
+  }
+  if (res.length >= 40){
+    var lums = res.map(function(q){ return 0.299 * q[0] + 0.587 * q[1] + 0.114 * q[2]; }), medl = median(lums);
+    var mad = median(lums.map(function(v){ return Math.abs(v - medl); })) * 1.48 + 0.5, lim = Math.min(2.5 * mad, 40); madStd = mad;
+    res = res.map(function(q, k){ var l = lums[k] - medl; var f = Math.abs(l) > lim ? lim / Math.abs(l) : 1; return [q[0] * f, q[1] * f, q[2] * f]; });
+  }
+  var tex = null;
+  if (res.length >= 40 && !grad){
+    var mr = 0, mg = 0, mbb = 0; res.forEach(function(q){ mr += q[0]; mg += q[1]; mbb += q[2]; }); mr /= res.length; mg /= res.length; mbb /= res.length;
+    col = [col[0] + mr, col[1] + mg, col[2] + mbb]; res = res.map(function(q){ return [q[0] - mr, q[1] - mg, q[2] - mbb]; });
+  }
+  var mot = null;
+  if (res.length >= 40){
+    // low-frequency mottling: how much the ink varies over ~6px blobs, and in which color direction
+    var Fl = new Float32Array(w * h), Fm = new Float32Array(w * h), dir = [0, 0, 0], dl = 0;
+    res.forEach(function(q, k){ var l = 0.299 * q[0] + 0.587 * q[1] + 0.114 * q[2]; Fl[resPos[k]] = l; Fm[resPos[k]] = 1; var sg = l < 0 ? -1 : 1; dir[0] += q[0] * sg; dir[1] += q[1] * sg; dir[2] += q[2] * sg; dl += Math.abs(l); });
+    var br = Math.max(2, Math.round(mb.capH * 0.04)), Bl = boxBlurF(Fl, w, h, br), Bm = boxBlurF(Fm, w, h, br), lv = 0, ln = 0;
+    resPos.forEach(function(p){ if (Bm[p] > 0.5){ var v = Bl[p] / Bm[p]; lv += v * v; ln++; } });
+    var lfStd = ln ? Math.sqrt(lv / ln) : 0;
+    var lsd = madStd;
+    var amp = Math.min(small ? 12 : 18, small ? lsd * 0.6 : lfStd), cell = small ? 2.5 : br * 3;
+    if (dl > 0 && amp > 1.5){ var dll = 0.299 * dir[0] + 0.587 * dir[1] + 0.114 * dir[2]; if (Math.abs(dll) > 1e-3){ mot = [dir[0] / dll * amp, dir[1] / dll * amp, dir[2] / dll * amp, cell]; } }
+    tex = []; var stp = res.length / Math.min(1024, res.length);
+    for (var ri = 0; ri < Math.min(1024, res.length); ri++){ var rr = res[Math.floor(ri * stp)]; tex.push(Math.round(rr[0]), Math.round(rr[1]), Math.round(rr[2])); }
+  }
+  // grain inside the letters, and edge softness
+  var gsel = new Uint8Array(w * h); for (i = 0; i < w * h; i++) gsel[i] = seg.A[i] > 0.95 ? 1 : 0;
+  var inkNoise = hpNoise(px, gsel, w, h);
+  var bsel = new Uint8Array(w * h); for (i = 0; i < w * h; i++) bsel[i] = seg.hole[i] ? 0 : 1;
+  var bgNoise = hpNoise(px, bsel, w, h);
+  var gr = [];
+  for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++){
+    i = y * w + x; var a0 = seg.A0[i]; if (a0 < 0.25 || a0 > 0.75) continue;
+    var gx = (seg.A0[i + 1] - seg.A0[i - 1]) / 2, gy = (seg.A0[i + w] - seg.A0[i - w]) / 2; gr.push(Math.sqrt(gx * gx + gy * gy));
+  }
+  var g90 = pct(gr, 0.9) || 1, sigma = 1 / (g90 * 2.5066), extra = Math.sqrt(Math.max(0, sigma * sigma - 0.5 * 0.5));
+  // erase mask: letters + their soft edge, grown a little
+  var em0 = new Uint8Array(w * h); for (i = 0; i < w * h; i++) em0[i] = seg.A[i] > 0.06 && seg.hole[i] ? 1 : 0;
+  if (anyKo){ var kd = dilate(ko, w, h, 3); for (i = 0; i < w * h; i++) if (kd[i]) em0[i] = 0; }
+  var em = dilate(em0, w, h, Math.max(2, Math.round(1 + extra * 2 + mb.sv * 0.12)));
+  if (anyKo){ var kd2 = dilate(ko, w, h, 1); for (i = 0; i < w * h; i++) if (kd2[i]) em[i] = 0; }
+  var lb = dk.toBox(mb.left, mb.base), rb = dk.toBox(mb.right, mb.base);
+  return { ang: ang, capH: mb.capH, xr: mb.xr, sv: mb.sv, sh: mb.sh, gap: mb.gap, wmed: mb.wmed, glyphs: mb.glyphs, bands: st.bands.length,
+    pitch: st.bands.length > 1 ? (st.bands[st.bands.length - 1].base - st.bands[0].base) / (st.bands.length - 1) : 0,
+    color: toHex(col), grad: grad ? [toHex(grad[0]), toHex(grad[1])] : null, blur: +extra.toFixed(2), inkNoise: +inkNoise.toFixed(1), bgNoise: +bgNoise.toFixed(1),
+    leftBase: lb, rightBase: rb, eraseMask: em, firstBase: st.bands[0].base, tex: madStd >= 2.5 ? tex : null, mot: madStd >= 2.5 ? mot : null, ninner: ninner, mad: +madStd.toFixed(1) };
+}
+
+/* ---------- realistic text (blend into the photo) ---------- */
+var realCache = {};
+function textPad(t){ var fx = t.fx || {}; return (fx.blur || 0) * 3 + (t.outline || 0) * t.size + (t.shadow ? t.size * 0.35 : 0) + t.size * 0.3 + 4; }
+function textBBox(t){
+  var M = measure(t), pad = textPad(t), hw = M.w / 2 + pad, hh = M.h / 2 + pad, c = Math.cos(t.rot), s = Math.sin(t.rot);
+  var ex = Math.abs(hw * c) + Math.abs(hh * s), ey = Math.abs(hw * s) + Math.abs(hh * c);
+  var x0 = Math.max(0, Math.floor(t.x - ex)), y0 = Math.max(0, Math.floor(t.y - ey)), x1 = Math.min(W, Math.ceil(t.x + ex)), y1 = Math.min(H, Math.ceil(t.y + ey));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+function blur3(ch, w, h, wt){
+  var tmp = new Float32Array(w * h), out = new Float32Array(w * h), c = 1 - 2 * wt, x, y, i;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){ i = y * w + x; tmp[i] = ch[i] * c + (x > 0 ? ch[i - 1] : ch[i]) * wt + (x < w - 1 ? ch[i + 1] : ch[i]) * wt; }
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){ i = y * w + x; out[i] = tmp[i] * c + (y > 0 ? tmp[i - w] : tmp[i]) * wt + (y < h - 1 ? tmp[i + w] : tmp[i]) * wt; }
+  return out;
+}
+function blurRGBA(d, w, h, sigma){
+  if (sigma < 0.2) return;
+  var r = Math.max(1, Math.round(sigma * 0.9)), n = w * h, ch = [new Float32Array(n), new Float32Array(n), new Float32Array(n), new Float32Array(n)], i, k;
+  for (i = 0; i < n; i++){ var a = d[i * 4 + 3] / 255; ch[0][i] = d[i * 4] * a; ch[1][i] = d[i * 4 + 1] * a; ch[2][i] = d[i * 4 + 2] * a; ch[3][i] = d[i * 4 + 3]; }
+  if (sigma <= 0.8){ var wt = Math.min(0.33, sigma * sigma / 2); for (k = 0; k < 4; k++) ch[k] = blur3(ch[k], w, h, wt); }
+  else { var rr = Math.max(1, Math.round(Math.sqrt((12 * sigma * sigma / 3) + 1) / 2 - 0.5)); for (k = 0; k < 4; k++) for (var p = 0; p < 3; p++) ch[k] = boxBlurF(ch[k], w, h, rr); }
+  for (i = 0; i < n; i++){ var aa = ch[3][i]; d[i * 4 + 3] = aa; if (aa > 0.5){ var f = 255 / aa; d[i * 4] = ch[0][i] * f; d[i * 4 + 1] = ch[1][i] * f; d[i * 4 + 2] = ch[2][i] * f; } }
+}
+function renderReal(t){
+  var bb = textBBox(t); if (bb.w < 1 || bb.h < 1) return null;
+  var key = JSON.stringify([t.text, t.x, t.y, t.size, t.font, t.weight, t.italic, t.color, t.color2, t.spacing, t.align, t.opacity, t.outline, t.ocolor, t.shadow, t.rot, t.fx, t.lhf, baseVer, bb]);
+  var hit = realCache[t.id]; if (hit && hit.key === key) return hit;
+  var c = document.createElement("canvas"); c.width = bb.w; c.height = bb.h;
+  var x = c.getContext("2d", { willReadFrequently: true });
+  x.translate(-bb.x, -bb.y);
+  drawTextPlain(x, t, 1, true);
+  var id = x.getImageData(0, 0, bb.w, bb.h), d = id.data, fx = t.fx || {}, n = bb.w * bb.h, i;
+  blurRGBA(d, bb.w, bb.h, fx.blur || 0);
+  var ink = (fx.ink || 0) / 100, grain = fx.grain || 0;
+  if (ink > 0){
+    var B = bctx.getImageData(bb.x, bb.y, bb.w, bb.h).data, Lb = new Float32Array(n);
+    for (i = 0; i < n; i++) Lb[i] = 0.299 * B[i * 4] + 0.587 * B[i * 4 + 1] + 0.114 * B[i * 4 + 2] + 8;
+    var Lm = boxBlurF(Lb, bb.w, bb.h, Math.max(3, Math.round(t.size * 0.12)));
+    for (i = 0; i < n; i++){ if (!d[i * 4 + 3]) continue; var tex = Lb[i] / Lm[i]; tex = tex < 0.5 ? 0.5 : (tex > 1.6 ? 1.6 : tex); var f = 1 + (tex - 1) * ink * 1.4; d[i * 4] *= f; d[i * 4 + 1] *= f; d[i * 4 + 2] *= f; }
+  }
+  if (grain > 0){
+    var T = fx.tex, TN = T ? T.length / 3 : 0, gk = grain / 10;
+    for (var yy = 0; yy < bb.h; yy++) for (var xx = 0; xx < bb.w; xx++){
+      i = yy * bb.w + xx; if (!d[i * 4 + 3]) continue;
+      if (TN){
+        var ti = Math.floor(hash2(bb.x + xx, bb.y + yy) * TN) * 3, mo = fx.mot, vn = 0;
+        if (mo){ vn = (vnoise(bb.x + xx, bb.y + yy, mo[3]) * 0.7 + vnoise(bb.x + xx + 999, bb.y + yy, mo[3] * 2.5) * 0.5) * gk; }
+        var hk = mo ? 0.65 : 1; vn *= 1.5;
+        d[i * 4] += T[ti] * gk * hk + (mo ? mo[0] * vn : 0); d[i * 4 + 1] += T[ti + 1] * gk * hk + (mo ? mo[1] * vn : 0); d[i * 4 + 2] += T[ti + 2] * gk * hk + (mo ? mo[2] * vn : 0);
+      }
+      else { var nz = gnoise(bb.x + xx, bb.y + yy) * grain * 0.9; d[i * 4] += nz; d[i * 4 + 1] += nz; d[i * 4 + 2] += nz; }
+    }
+  }
+  x.setTransform(1, 0, 0, 1, 0, 0); x.putImageData(id, 0, 0);
+  var r = { key: key, c: c, x: bb.x, y: bb.y };
+  if (hit && hit.c && hit.c !== c) hit.c.width = 0;
+  realCache[t.id] = r; return r;
+}
+function textFill(c, t, y){
+  if (!t.color2) return t.color;
+  var m = c.measureText("H"), a = m.actualBoundingBoxAscent || t.size * 0.36, d = m.actualBoundingBoxDescent || t.size * 0.36;
+  var g = c.createLinearGradient(0, y - a, 0, y + d);
+  g.addColorStop(0, t.color); g.addColorStop(1, t.color2); return g;
+}
+function drawText(c, t, scale){
+  var g = gesture, moving = g && g.t === t && (g.type === "tdrag" || g.type === "thandle" || g.type === "tpinch");
+  if (t.fx && t.fx.on && !moving){
+    var r = renderReal(t);
+    if (r){ c.drawImage(r.c, r.x, r.y); return; }
+  }
+  drawTextPlain(c, t, scale);
+}
+/* anchoring: keep the left (or center/right) baseline point fixed while the words change */
+function baseOff(t){ mctx.font = fontOf(t, t.size); mctx.textBaseline = "middle"; var m = mctx.measureText("H"); mctx.textBaseline = "alphabetic"; return m.actualBoundingBoxDescent || t.size * 0.35; }
+function anchorLocal(t, M){
+  var bx = t.anchor.mode === "left" ? -M.w / 2 : (t.anchor.mode === "right" ? M.w / 2 : 0);
+  return { x: bx, y: -M.h / 2 + M.lh * 0.5 + baseOff(t) };
+}
+function reanchor(t){
+  if (!t || !t.anchor) return;
+  var M = measure(t), l = anchorLocal(t, M), c = Math.cos(t.rot), s = Math.sin(t.rot);
+  t.x = t.anchor.x - (l.x * c - l.y * s); t.y = t.anchor.y - (l.x * s + l.y * c);
+}
+function anchorFrom(t){
+  if (!t || !t.anchor) return;
+  var M = measure(t), l = anchorLocal(t, M), c = Math.cos(t.rot), s = Math.sin(t.rot);
+  t.anchor.x = t.x + l.x * c - l.y * s; t.anchor.y = t.y + l.x * s + l.y * c;
+}
+
+/* ---------- Change text: read the old words, erase them, put matched new text in place ---------- */
+var lastMatch = null;
+async function changeText(rect){
+  if (busy) return;
+  busy = true; txEnd();
+  try {
+    var bx = Math.max(0, Math.floor(rect.x0)), by = Math.max(0, Math.floor(rect.y0)), bx2 = Math.min(W, Math.ceil(rect.x1)), by2 = Math.min(H, Math.ceil(rect.y1));
+    var bw = bx2 - bx, bh = by2 - by; if (bw < 6 || bh < 6) return;
+    setPill("Reading the text\u2026"); await nextFrame();
+    var img = bctx.getImageData(bx, by, bw, bh);
+    var an = analyzeText(img, bw, bh);
+    if (!an){ showMsg("Couldn\u2019t find letters in that box. Try a box just around the words."); return; }
+    setPill("Matching the font\u2026"); await nextFrame();
+    var ft = await fitFont(an);
+    // erase the old letters (mask padded so the fill can feather)
+    var P = 10, mx = Math.max(0, bx - P), my = Math.max(0, by - P), mw = Math.min(W, bx2 + P) - mx, mh = Math.min(H, by2 + P) - my;
+    var m = new Uint8Array(mw * mh);
+    for (var y = 0; y < bh; y++) for (var x = 0; x < bw; x++) if (an.eraseMask[y * bw + x]) m[(y + by - my) * mw + (x + bx - mx)] = 1;
+    var mk = { x: mx, y: my, w: mw, h: mh, m: m };
+    var eimg = bctx.getImageData(mx, my, mw, mh), before = new ImageData(new Uint8ClampedArray(eimg.data), mw, mh);
+    var eng = await fillHole(eimg, m, mk);
+    bctx.putImageData(eimg, mx, my); baseVer++;
+    var pxE = { kind: "px", x: mx, y: my, w: mw, h: mh, before: before, after: eimg };
+    // new text, pre-matched
+    var tb = JSON.stringify(texts);
+    var lb = { x: bx + an.leftBase.x, y: by + an.leftBase.y }, rb = { x: bx + an.rightBase.x, y: by + an.rightBase.y };
+    var midX = (lb.x + rb.x) / 2, mode = Math.abs(midX - W / 2) < W * 0.03 ? "center" : "left";
+    var ap = mode === "center" ? { x: midX, y: (lb.y + rb.y) / 2 } : lb;
+    var grain = an.tex ? (an.sv < 7 ? 6 : 10) : Math.min(25, Math.round(an.bgNoise * 10) / 10);
+    var t = { id: nextId++, text: ft.caps ? "NEW TEXT" : "New text", x: ap.x, y: ap.y, rot: an.ang, size: clampSize(ft.size), font: ft.font, weight: ft.weight, italic: false,
+      color: an.grad ? an.grad[0] : an.color, color2: an.grad ? an.grad[1] : null, spacing: ft.spacing, align: mode, opacity: 1, outline: 0, ocolor: "#000000", shadow: false,
+      lhf: an.pitch && ft.size ? Math.max(0.8, Math.min(3, an.pitch / ft.size)) : null,
+      fx: { on: true, blur: Math.min(8, Math.round(an.blur * 10) / 10), grain: grain, ink: an.tex ? 10 : (an.bgNoise > 2.5 ? 35 : 10), tex: an.tex, mot: an.mot },
+      anchor: { x: ap.x, y: ap.y, mode: mode }, matched: true };
+    texts.push(t); reanchor(t);
+    pushUndo({ kind: "multi", items: [pxE, { kind: "tx", before: tb, after: JSON.stringify(texts) }] });
+    lastMatch = { box: [bx, by, bw, bh], an: Object.assign({}, an, { eraseMask: undefined, tex: an.tex ? an.tex.length / 3 : 0, leftBase: lb }), fit: { font: FONTS[ft.font].n, weight: ft.weight, size: Math.round(ft.size), spacing: +ft.spacing.toFixed(3), top: ft.scored }, engine: eng };
+    setTool("text"); select(t.id);
+    var ta = $("tText"); ta.select();
+    showMsg("Type the new words. Font, size, color and angle are matched; tweak them below.");
+    ensureFont(t);
+  } catch (err){
+    console.error(err); showMsg("That didn\u2019t work: " + (err && err.message ? err.message : err), true);
+  } finally { busy = false; setPill(null); draw(); }
+}
+
+/* ---------- realistic recolor: unmix letters from their background, keep shading + grain ---------- */
+function recolorReal(img, mk, hex){
+  var w = mk.w, h = mk.h, n = w * h, px = img.data, tgt = hexRGB(hex), i;
+  var seg = segmentText(img, w, h, mk.m, pickColor, true);
+  if (!seg) return false;
+  var src = seg.src, sl = Math.max(8, 0.299 * src[0] + 0.587 * src[1] + 0.114 * src[2]), did = false, bg = seg.bg;
+  var tl = 0.299 * tgt[0] + 0.587 * tgt[1] + 0.114 * tgt[2];
+  for (i = 0; i < n; i++){
+    var a = seg.A[i]; if (a < 0.02 || !mk.m[i]) continue;
+    var p0 = px[i * 4], p1 = px[i * 4 + 1], p2 = px[i * 4 + 2], tp0, tp1, tp2;
+    if (a > 0.2){ tp0 = bg[i * 4] + (p0 - bg[i * 4]) / a; tp1 = bg[i * 4 + 1] + (p1 - bg[i * 4 + 1]) / a; tp2 = bg[i * 4 + 2] + (p2 - bg[i * 4 + 2]) / a; }
+    else { tp0 = src[0]; tp1 = src[1]; tp2 = src[2]; }
+    var r = (0.299 * tp0 + 0.587 * tp1 + 0.114 * tp2) / sl; r = r < 0.25 ? 0.25 : (r > 2.5 ? 2.5 : r);
+    // shading: scale toward black for darker parts, toward white for brighter parts
+    var n0, n1, n2;
+    if (r <= 1){ n0 = tgt[0] * r; n1 = tgt[1] * r; n2 = tgt[2] * r; }
+    else { var up = Math.min(1, (r - 1) * sl / Math.max(20, 255 - tl)); n0 = tgt[0] + (255 - tgt[0]) * up; n1 = tgt[1] + (255 - tgt[1]) * up; n2 = tgt[2] + (255 - tgt[2]) * up; }
+    px[i * 4] = p0 + a * (n0 - tp0); px[i * 4 + 1] = p1 + a * (n1 - tp1); px[i * 4 + 2] = p2 + a * (n2 - tp2);
+    did = true;
+  }
+  return did;
+}
+
+/* ---------- apply an erase / recolor ---------- */
+function nextFrame(){ return new Promise(function(r){ requestAnimationFrame(function(){ setTimeout(r, 0); }); }); }
+var opsLog = [], lastEngine = "";
+async function applyRegion(kind, region){
+  opsLog.push(kind + ":" + region.type + (region.pts ? ":" + region.pts.length : ""));
+  if (busy) return;
+  busy = true; txEnd();
+  var letters = kind === "erase" ? $("eLetters").checked : $("rLetters").checked;
+  try {
+    var margin = kind === "erase" ? 14 + (letters ? 12 : 0) : 0;
+    var mk = buildMask(region, margin);
+    if (!mk) return;
+    setPill(kind === "erase" ? "Erasing\u2026" : "Recoloring\u2026");
+    await nextFrame();
+    var img = bctx.getImageData(mk.x, mk.y, mk.w, mk.h);
+    var before = new ImageData(new Uint8ClampedArray(img.data), mk.w, mk.h);
+    if (kind === "erase"){
+      var m = mk.m;
+      if (letters){ m = lettersMask(img, mk); if (!m){ showMsg("No letters found there. Turn off \u201cLetters only\u201d to erase the whole area."); return; } if (eraseEngine === "ai") m = dilate(m, mk.w, mk.h, 2); }
+      lastEngine = await fillHole(img, m, mk);
+    } else {
+      if (letters){ if (!recolorReal(img, mk, rColor)){ showMsg("No letters found there. Try a box just around the text."); return; } }
+      else if (!recolor(img, mk, rColor, false)) return;
+    }
+    bctx.putImageData(img, mk.x, mk.y); baseVer++;
+    pushUndo({ kind: "px", x: mk.x, y: mk.y, w: mk.w, h: mk.h, before: before, after: img });
+    if (kind === "erase" && cvState === "failed" && !applyRegion._warned){ applyRegion._warned = true; showMsg("Using the simple eraser (the better one could not load). It still works, just softer."); }
+  } catch (err){
+    showMsg("That didn\u2019t work: " + (err && err.message ? err.message : err), true);
+  } finally { busy = false; setPill(null); draw(); }
+}
+
+/* ---------- tools & panels ---------- */
+document.querySelector(".tools").addEventListener("click", function(e){ var b = e.target.closest("button"); if (b) setTool(b.getAttribute("data-tool")); });
+function setTool(t){
+  tool = t; txEnd();
+  [].forEach.call(document.querySelectorAll(".tools button"), function(b){ b.classList.toggle("on", b.getAttribute("data-tool") === t); });
+  $("pChange").hidden = t !== "change"; $("pErase").hidden = t !== "erase"; $("pText").hidden = t !== "text"; $("pRecolor").hidden = t !== "recolor";
+  vp.classList.toggle("tx", t === "text");
+  if (t === "erase" && hasPhoto && eraseEngine === "fast") loadCv();
+  draw();
+}
+segInit("eMode", function(v){ eMode = v; $("eSizeWrap").hidden = v !== "brush"; $("eHint").textContent = v === "brush" ? "Paint over the text. It fills in from around it when you lift your finger." : "Drag a box over text or a barcode. It fills in when you let go."; draw(); });
+segInit("eEng", function(v){ eraseEngine = v === "ai" ? "ai" : "fast"; if (eraseEngine === "fast" && hasPhoto) loadCv(); });
+segInit("rMode", function(v){ rMode = v; $("rSizeWrap").hidden = v !== "brush"; draw(); });
+function sizePreview(){ $("eSizeV").textContent = $("eSize").value; $("rSizeV").textContent = $("rSize").value; hover = { x: vpW / 2, y: vpH / 2 }; draw(); clearTimeout(sizePreview._t); sizePreview._t = setTimeout(function(){ hover = null; draw(); }, 900); }
+$("eSize").addEventListener("input", sizePreview); $("rSize").addEventListener("input", sizePreview);
+swatchesInit("rColors", function(c){ rColor = c; swatchesSet("rColors", c); });
+function toHex(c){ return "#" + c.map(function(v){ return ("0" + Math.round(Math.max(0, Math.min(255, v))).toString(16)).slice(-2); }).join(""); }
+function updPick(){
+  $("rPickV").textContent = picking ? "Tap the text\u2026" : (pickColor ? toHex(pickColor) : "Auto");
+  $("rPickSw").style.background = pickColor ? toHex(pickColor) : "conic-gradient(red,yellow,lime,cyan,blue,magenta,red)";
+  $("rPick").classList.toggle("on", picking); $("rPickWrap").hidden = !$("rLetters").checked;
+}
+function samplePick(ip){
+  picking = false;
+  var x = Math.max(0, Math.min(W - 1, Math.round(ip.x))), y = Math.max(0, Math.min(H - 1, Math.round(ip.y)));
+  var x0 = Math.max(0, x - 1), y0 = Math.max(0, y - 1), w = Math.min(W, x + 2) - x0, h = Math.min(H, y + 2) - y0;
+  var d = bctx.getImageData(x0, y0, w, h).data, s = [0, 0, 0], n = w * h;
+  for (var i = 0; i < n; i++){ s[0] += d[i * 4]; s[1] += d[i * 4 + 1]; s[2] += d[i * 4 + 2]; }
+  pickColor = [s[0] / n, s[1] / n, s[2] / n]; updPick();
+  showMsg("Got it. Now paint or box over that text.");
+}
+$("rPick").addEventListener("click", function(){ picking = !picking; updPick(); if (picking) showMsg("Tap a letter on the photo to pick its color."); });
+$("rAuto").addEventListener("click", function(){ picking = false; pickColor = null; updPick(); });
+$("rLetters").addEventListener("change", updPick);
+swatchesSet("rColors", rColor);
+
+/* text panel */
+(function(){
+  var fe = $("tFonts");
+  FONTS.forEach(function(f, i){
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = f.n; b.style.fontFamily = f.c; b.setAttribute("data-i", i);
+    b.addEventListener("click", function(){ setProp("font", i); });
+    fe.appendChild(b);
+  });
+  var we = $("tWeights");
+  WEIGHTS.forEach(function(wt){
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = wt[1]; b.style.fontWeight = wt[0]; b.style.fontSize = "15px"; b.setAttribute("data-w", wt[0]);
+    b.addEventListener("click", function(){ setProp("weight", wt[0]); });
+    we.appendChild(b);
+  });
+  var it = document.createElement("button"); it.type = "button"; it.className = "chip"; it.id = "tItalic"; it.innerHTML = "<i>Italic</i>"; it.style.fontSize = "15px";
+  it.addEventListener("click", function(){ var t = getSel(); if (t) setProp("italic", !t.italic); });
+  we.appendChild(it);
+  swatchesInit("tColors", function(c){ setProp("color", c); });
+  swatchesInit("tOColors", function(c){ setProp("ocolor", c); });
+  swatchesInit("tC2Colors", function(c){ setProp("color2", c); });
+  var off = document.createElement("button"); off.type = "button"; off.className = "swatch off"; off.setAttribute("data-c", ""); off.setAttribute("aria-label", "No gradient");
+  off.addEventListener("click", function(){ setProp("color2", null); });
+  $("tC2Colors").insertBefore(off, $("tC2Colors").firstChild);
+})();
+function setProp(k, v){
+  var t = getSel(); if (!t) return;
+  txBegin();
+  if (k === "align" && t.anchor){ t.align = v; t.anchor.mode = v; anchorFrom(t); }
+  else { t[k] = v; reanchor(t); }
+  lastStyle = styleOf(t); txEnd(500);
+  syncTextCtl(); ensureFont(t); draw();
+}
+function styleOf(t){ return { size: t.size, font: t.font, weight: t.weight, italic: t.italic, color: t.color, spacing: t.spacing, align: t.align, opacity: t.opacity, outline: t.outline, ocolor: t.ocolor, shadow: t.shadow }; }
+function addText(ip, focus){
+  txEnd();
+  var st = lastStyle || { size: Math.round(Math.min(W, H) * 0.08), font: 0, weight: 500, italic: false, color: "#ffffff", spacing: 0.12, align: "center", opacity: 1, outline: 0, ocolor: "#000000", shadow: false };
+  var t = Object.assign({ id: nextId++, text: "TEXT", x: ip ? ip.x : W / 2, y: ip ? ip.y : H / 2, rot: 0 }, st);
+  t.size = clampSize(t.size);
+  txBegin(); texts.push(t); txEnd();
+  select(t.id);
+  if (focus){ var ta = $("tText"); ta.focus(); ta.select(); }
+  ensureFont(t);
+}
+function select(id){ selId = id; syncText(); draw(); }
+function deleteSel(){ var t = getSel(); if (!t) return; txBegin(); texts = texts.filter(function(x){ return x.id !== t.id; }); txEnd(); select(null); }
+$("tAdd").addEventListener("click", function(){ addText(null, true); });
+$("tDel").addEventListener("click", deleteSel);
+$("tDone").addEventListener("click", function(){ txEnd(); $("tText").blur(); select(null); });
+$("tDup").addEventListener("click", function(){
+  var t = getSel(); if (!t) return;
+  var c = Object.assign({}, t, { id: nextId++, x: t.x + t.size * 0.4, y: t.y + t.size * 0.4 });
+  txBegin(); texts.push(c); txEnd(); select(c.id);
+});
+$("tText").addEventListener("input", function(){ var t = getSel(); if (!t) return; txBegin(); t.text = this.value; reanchor(t); txEnd(800); ensureFont(t); draw(); });
+$("tSize").addEventListener("input", function(){ var t = getSel(); if (!t) return; txBegin(); t.size = sliderToSize(+this.value); reanchor(t); lastStyle = styleOf(t); txEnd(500); syncTextCtl(true); draw(); });
+function setFx(k, v){ var t = getSel(); if (!t) return; txBegin(); t.fx = Object.assign({ on: false, blur: 0, grain: 0, ink: 0 }, t.fx || {}); t.fx[k] = v; txEnd(500); syncTextCtl(true); draw(); }
+$("tReal").addEventListener("change", function(){ var t = getSel(); if (!t) return; var on = this.checked; if (on && (!t.fx || (!t.fx.blur && !t.fx.grain && !t.fx.ink))){ txBegin(); t.fx = { on: true, blur: 0.6, grain: 4, ink: 20 }; txEnd(); syncTextCtl(); draw(); } else setFx("on", on); });
+$("tBlur").addEventListener("input", function(){ setFx("blur", +this.value / 10); });
+$("tGrain").addEventListener("input", function(){ setFx("grain", +this.value); });
+$("tInk").addEventListener("input", function(){ setFx("ink", +this.value); });
+$("tSpace").addEventListener("input", function(){ setPropQuiet("spacing", +this.value / 100); });
+$("tOp").addEventListener("input", function(){ setPropQuiet("opacity", +this.value / 100); });
+$("tRot").addEventListener("input", function(){ setPropQuiet("rot", +this.value * Math.PI / 180); });
+$("tOut").addEventListener("input", function(){ setPropQuiet("outline", +this.value / 100); $("tOcWrap").hidden = +this.value === 0; });
+$("tShadow").addEventListener("change", function(){ setProp("shadow", this.checked); });
+segInit("tAlign", function(v){ setProp("align", v); });
+function setPropQuiet(k, v){ var t = getSel(); if (!t) return; txBegin(); t[k] = v; if (k === "rot") anchorFrom(t); else reanchor(t); if (k !== "rot") lastStyle = styleOf(t); txEnd(500); syncTextCtl(true); draw(); }
+function sizeMax(){ return Math.max(40, Math.round(Math.max(W, H) * 0.6)); }
+function sliderToSize(v){ var mn = 4, mx = sizeMax(); return mn * Math.pow(mx / mn, v / 1000); }
+function sizeToSlider(s){ var mn = 4, mx = sizeMax(); return Math.round(1000 * Math.log(Math.max(mn, s) / mn) / Math.log(mx / mn)); }
+function syncText(){
+  var t = getSel();
+  $("tNone").hidden = !!t; $("tCtl").hidden = !t;
+  if (t){ $("tText").value = t.text; syncTextCtl(); }
+}
+function syncTextCtl(fromSlider){
+  var t = getSel(); if (!t) return;
+  if (!fromSlider){
+    $("tSize").value = sizeToSlider(t.size); $("tSpace").value = Math.round(t.spacing * 100); $("tOp").value = Math.round(t.opacity * 100);
+    $("tRot").value = Math.round(t.rot * 180 / Math.PI); $("tOut").value = Math.round(t.outline * 100);
+  }
+  $("tSizeV").textContent = Math.round(t.size) + " px"; $("tSpaceV").textContent = (t.spacing * 100).toFixed(0);
+  $("tOpV").textContent = Math.round(t.opacity * 100) + "%"; $("tRotV").textContent = Math.round(t.rot * 180 / Math.PI) + "\u00b0";
+  $("tOutV").textContent = t.outline ? Math.round(t.outline * 100) : "Off"; $("tOcWrap").hidden = !t.outline;
+  $("tShadow").checked = !!t.shadow;
+  [].forEach.call($("tFonts").children, function(b){ b.classList.toggle("on", +b.getAttribute("data-i") === t.font); });
+  [].forEach.call($("tWeights").querySelectorAll("[data-w]"), function(b){ b.classList.toggle("on", +b.getAttribute("data-w") === t.weight); });
+  $("tItalic").classList.toggle("on", !!t.italic);
+  swatchesSet("tColors", t.color); swatchesSet("tOColors", t.ocolor); segSet("tAlign", t.align);
+  swatchesSet("tC2Colors", t.color2 || ""); $("tC2V").textContent = t.color2 ? t.color2 : "Off";
+  var fx = t.fx || { on: false, blur: 0, grain: 0, ink: 0 };
+  $("tReal").checked = !!fx.on; $("tRealWrap").hidden = !fx.on;
+  if (!fromSlider){ $("tBlur").value = Math.round((fx.blur || 0) * 10); $("tGrain").value = fx.grain || 0; $("tInk").value = fx.ink || 0; }
+  $("tBlurV").textContent = (fx.blur || 0).toFixed(1); $("tGrainV").textContent = Math.round(fx.grain || 0); $("tInkV").textContent = Math.round(fx.ink || 0) + "%";
+}
+
+/* ---------- save ---------- */
+var lastBlob = null, lastUrl = null;
+async function renderBlob(){
+  await Promise.all(texts.map(fontsNeeded));
+  var c = document.createElement("canvas"); c.width = W; c.height = H;
+  var x = c.getContext("2d");
+  x.drawImage(base, 0, 0);
+  texts.forEach(function(t){ drawText(x, t, 1); });
+  var b = await new Promise(function(res){ c.toBlob(res, "image/png"); });
+  c.width = 0; c.height = 0;
+  if (!b) throw new Error("could not make the image");
+  return b;
+}
+function fileName(){ var d = new Date(); return "edit-" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "-" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2) + ("0" + d.getSeconds()).slice(-2) + ".png"; }
+function canShareFile(f){ try { return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [f] })); } catch(_){ return false; } }
+function isTouch(){ return window.matchMedia && matchMedia("(pointer: coarse)").matches; }
+$("save").addEventListener("click", async function(){
+  if (busy || !hasPhoto) return;
+  txEnd(); busy = true; setPill("Making your image\u2026");
+  try {
+    lastBlob = await renderBlob();
+    if (lastUrl) URL.revokeObjectURL(lastUrl);
+    lastUrl = URL.createObjectURL(lastBlob);
+    var name = fileName(), file = new File([lastBlob], name, { type: "image/png" });
+    window.__lastSave = { name: name, size: lastBlob.size };
+    if (isTouch() && canShareFile(file)){
+      try { await navigator.share({ files: [file] }); return; }
+      catch (err){ if (err && err.name === "AbortError") return; }
+      openSheet(name, file);
+    } else {
+      var a = document.createElement("a"); a.href = lastUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      showMsg("Saved " + W + " x " + H + " PNG.");
+    }
+  } catch (err){ showMsg("Couldn\u2019t save: " + (err && err.message ? err.message : err), true); }
+  finally { busy = false; setPill(null); }
+});
+var sheetFile = null;
+function openSheet(name, file){
+  sheetFile = file; $("sheetImg").src = lastUrl; $("sheetDl").href = lastUrl; $("sheetDl").download = name;
+  $("sheetShare").hidden = !canShareFile(file); $("sheet").hidden = false;
+}
+$("sheetShare").addEventListener("click", function(){ if (sheetFile) navigator.share({ files: [sheetFile] }).catch(function(){}); });
+$("sheetClose").addEventListener("click", function(){ $("sheet").hidden = true; });
+$("sheet").addEventListener("click", function(e){ if (e.target === this) this.hidden = true; });
+
+/* ---------- start over / new photo ---------- */
+$("restart").addEventListener("click", function(){
+  if (busy) return;
+  if (!confirm("Start over? This undoes everything on this photo.")) return;
+  txEnd();
+  var url = origUrl; origUrl = null;
+  loadImg(url).then(function(img){
+    bctx.clearRect(0, 0, W, H); bctx.drawImage(img, 0, 0, W, H);
+    origUrl = url; texts = []; selId = null; undoStack = []; redoStack = []; zoom = 1; baseVer++; realCache = {};
+    updUR(); syncText(); applyT();
+  });
+});
+$("newPhoto").addEventListener("click", function(){
+  if (busy) return;
+  if ((undoStack.length || texts.length) && !confirm("Open a new photo? Unsaved changes will be lost.")) return;
+  fileIn.click();
+});
+
+/* ---------- optional AI edit (online, limited) ---------- */
+var gradio = null;
+function isQuota(t){ return /zerogpu|gpu quota|quota|exceeded|runs limit|rate limit|too many requests/i.test(t || ""); }
+function errText(e){ if (!e) return "Unknown error"; if (typeof e === "string") return e; return e.message || e.error || e.original_msg || JSON.stringify(e).slice(0, 300); }
+async function aiOnce(model, blob, prompt){
+  var client = await gradio.Client.connect(model.space, { events: ["data", "status"] });
+  var job = client.submit(model.endpoint, model.args(gradio.handle_file(blob), prompt));
+  var timer = setTimeout(function(){ try { job.cancel(); } catch(_){} }, 180000);
+  try {
+    for await (var m of job){
+      if (m.type === "status"){
+        if (m.stage === "error") throw new Error(m.message || "The AI hit an error.");
+        if (m.stage === "pending" && typeof m.position === "number" && m.position > 0) setPill("AI: in line, " + m.position + " ahead");
+        else setPill("AI editing\u2026 (up to a minute)");
+      } else if (m.type === "data"){
+        var im = Array.isArray(m.data) ? m.data[0] : m.data;
+        var url = im && (im.url || (typeof im === "string" ? im : null));
+        if (!url) throw new Error("No image came back.");
+        return url;
+      }
+    }
+    throw new Error("The AI stopped without a result.");
+  } finally { clearTimeout(timer); }
+}
+$("aiGo").addEventListener("click", async function(){
+  var prompt = $("aiPrompt").value.trim();
+  if (!prompt){ $("aiPrompt").focus(); return; }
+  if (busy || !hasPhoto) return;
+  busy = true; txEnd(); var btn = this; btn.disabled = true;
+  try {
+    setPill("Connecting to AI\u2026");
+    if (!gradio) gradio = await import(GRADIO_URL);
+    var s = Math.min(1, 1024 / Math.max(W, H)), c = document.createElement("canvas");
+    c.width = Math.round(W * s); c.height = Math.round(H * s);
+    var cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(base, 0, 0, c.width, c.height);
+    var blob = await new Promise(function(r){ c.toBlob(r, "image/jpeg", 0.92); }); c.width = 0;
+    var url = null, lastErr = null, quotaHits = 0;
+    for (var i = 0; i < AI_MODELS.length && !url; i++){
+      try { url = await aiOnce(AI_MODELS[i], blob, prompt); }
+      catch (err){ lastErr = errText(err); if (isQuota(lastErr)) quotaHits++; }
+    }
+    if (!url) throw new Error(quotaHits ? "The free AI limit is used up for now. Try again later (the eraser and text tools are always unlimited)." : (lastErr || "The AI didn\u2019t answer."));
+    var r = await fetch(url); var ob = await r.blob(); var ou = URL.createObjectURL(ob);
+    var img = await loadImg(ou);
+    var before = bctx.getImageData(0, 0, W, H);
+    bctx.clearRect(0, 0, W, H); bctx.drawImage(img, 0, 0, W, H); baseVer++;
+    URL.revokeObjectURL(ou);
+    pushUndo({ kind: "px", x: 0, y: 0, w: W, h: H, before: before, after: bctx.getImageData(0, 0, W, H) });
+    showMsg("AI edit done. Undo if you don\u2019t like it.");
+  } catch (err){ showMsg(errText(err), true); }
+  finally { busy = false; btn.disabled = false; setPill(null); draw(); }
+});
+
+/* test hook */
+window.__edit = { get ai(){ return { state: ai.state, loadMs: ai.loadMs, runs: ai.runs, err: ai.err, fromCache: ai.fromCache }; }, get lastMatch(){ return lastMatch; }, get lastEngine(){ return lastEngine; }, setEngine: function(v){ eraseEngine = v; segSet("eEng", v); }, exportBase: function(){ return base.toDataURL("image/png"); }, exportData: async function(){ var b = await renderBlob(); return await new Promise(function(r){ var fr = new FileReader(); fr.onload = function(){ r(fr.result); }; fr.readAsDataURL(b); }); }, get busy(){ return busy; }, ops: opsLog, get W(){ return W; }, get H(){ return H; }, get cvState(){ return cvState; }, get texts(){ return texts; }, get undo(){ return undoStack.length; }, toVp: toVp, toImg: toImg, loadCv: loadCv };
+})();
+</script>
+</body>
+</html>
